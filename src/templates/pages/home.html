@@ -1,0 +1,57 @@
+{% extends './base.html' %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">
+        <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" width="40" height="40">
+        La Poblanita
+    </a>
+    <div class="d-flex align-items-center">
+        <!-- Foto perfil -->
+        <a href="{{ url_for('profile') }}" class="me-3">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-box-arrow-right"></i> Salir
+        </a>
+    </div>
+  </div>
+</nav>
+
+<section class="container py-5">
+  <div class="row justify-content-center align-items-center min-vh-100 g-4 py-5">
+    <div class="col-10 col-md-6 col-lg-4">
+      <a href="{{ url_for('products') }}" class="btn btn-outline-secondary w-100 p-3">
+        <div class="text-center">
+          <h5 class="card-title mb-3">Productos</h5>
+            <img src="{{ url_for('static', filename='images/products.png') }}" class="img-fluid" width="200" alt="Almacén">
+        </div>
+      </a>
+    </div>
+    <div class="col-10 col-md-6 col-lg-4">
+      <a href="{{ url_for('packages') }}" class="btn btn-outline-secondary w-100 p-3">
+        <div class="text-center">
+          <h5 class="card-title mb-3">Paquetes</h5>
+          <img src="{{ url_for('static', filename='images/routes.png') }}" class="img-fluid" width="200" alt="Entregas">
+        </div>
+      </a>
+    </div>
+    <div class="col-10 col-md-6 col-lg-4">
+      <a href="{{ url_for('employees') }}" class="btn btn-outline-secondary w-100 p-3">
+        <div class="text-center">
+          <h5 class="card-title mb-3">Empleados</h5>
+          <img src="{{ url_for('static', filename='images/employee.png') }}" class="img-fluid" width="200" alt="Empleados">
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+{% endblock %}

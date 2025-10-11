@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Paquete{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand text-white" href="{{ url_for('products') }}">
+            <i class="bi bi-box-seam"></i> Confirmar paquete
+        </a>
+    </div>
+</nav>
+
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Confirmación de paquete</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del paquete -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>ID Paquete:</strong> PQ-{{ paquete.id_paquete }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de creación:</strong> {{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+
+                    <!-- Productos del paquete -->
+                    <h6>Productos incluidos:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Cantidad</th>
+                                    <th>Stock Disponible</th>
+                                    <th>Imagen</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set productos_insuficientes = [] %}
+                                {% if productos_del_paquete %}
+                                    {% for item in productos_del_paquete %}
+                                    {% set tiene_stock = item.cantidad <= item.producto.cantidad %}
+                                    {% if not tiene_stock %}
+                                        {% set _ = productos_insuficientes.append(item) %}
+                                    {% endif %}
+                                    <tr class="{% if not tiene_stock %}table-warning{% endif %}">
+                                        <td>{{ item.producto.nombre }}</td>
+                                        <td>{{ item.cantidad }}</td>
+                                        <td>
+                                            <span class="badge {% if tiene_stock %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ item.producto.cantidad }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <img src="{{ url_for('product_image', producto_id=item.producto.id_producto) }}" 
+                                                 width="30" height="30" class="rounded">
+                                        </td>
+                                        <td>
+                                            {% if tiene_stock %}
+                                                <span class="badge bg-success">Disponible</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Stock insuficiente</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center">No hay productos en el paquete</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Advertencia si hay productos con stock insuficiente -->
+                    {% if productos_insuficientes %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Advertencia:</strong> Los siguientes productos no tienen suficiente stock:
+                        <ul class="mb-0 mt-2">
+                            {% for item in productos_insuficientes %}
+                            <li>
+                                <strong>{{ item.producto.nombre }}</strong>: 
+                                Solicitado {{ item.cantidad }}, Disponible {{ item.producto.cantidad }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <small class="d-block mt-2">Si confirma el paquete, estos productos no se incluirán.</small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Resumen del paquete -->
+                    <div class="alert alert-info">
+                        <strong>Resumen:</strong> 
+                        {% if productos_del_paquete %}
+                            {{ productos_del_paquete | length }} producto(s) seleccionado(s) - 
+                            {% set total_unidades = productos_del_paquete | sum(attribute='cantidad') %}
+                            {{ total_unidades }} unidad(es) en total
+                        {% else %}
+                            0 productos seleccionados - 0 unidades en total
+                        {% endif %}
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="d-flex justify-content-center justify-content-md-end mt-4 gap-3">
+                        <form method="POST" action="{{ url_for('cancel_package', id=paquete.id_paquete) }}">
+                            <button type="submit" class="btn btn-secondary" 
+                                    onclick="return confirm('¿Está seguro de cancelar este paquete?')">
+                                <i class="bi bi-x-lg"></i> Cancelar paquete
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('confirm_package', id=paquete.id_paquete) }}">
+                            <button type="submit" class="btn btn-success"
+                                    onclick="return confirm('¿Confirmar la creación de este paquete? Se reducirá el stock de los productos con stock suficiente.')">
+                                <i class="bi bi-check"></i> Confirmar paquete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

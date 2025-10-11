@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Paquetes{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">
+        <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" width="40" height="40">
+        La Poblanita - Paquetes
+    </a>
+    <div class="d-flex align-items-center">
+        <!-- Foto perfil -->
+        <a href="{{ url_for('profile') }}" class="me-3">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+        </a>
+        <a href="{{ url_for('home') }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-house"></i> Inicio
+        </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID Paquete</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paquete in paquetes %}
+                        <tr>
+                            <td>PQ-{{ paquete.id_paquete }}</td>
+                            <td>{{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                        data-bs-target="#modalVer{{ paquete.id_paquete }}">
+                                    <i class="bi bi-eye"></i> Ver
+                                </button>
+                                <form method="POST" action="{{ url_for('delete_package', id=paquete.id_paquete) }}" 
+                                    class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                            onclick="return confirm('ADVERTENCIA:\n¿Desea eliminar el paquete PQ-{{ paquete.id_paquete }}?\n\nATENCIÓN: Los productos de este paquete ya fueron descontados del inventario y no se regresarán al stock.');">
+                                        <i class="bi bi-trash"></i> Borrar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Ver -->
+                        <div class="modal fade" id="modalVer{{ paquete.id_paquete }}">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Paquete PQ-{{ paquete.id_paquete }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="text-start">
+                                            <p><strong>Fecha:</strong> {{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            <p><strong>Productos:</strong></p>
+                                            <div class="list-group">
+                                                {% for item in paquete.productos %}
+                                                <div class="list-group-item">
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ url_for('product_image', producto_id=item.producto.id_producto) }}" 
+                                                            width="50" height="50" class="rounded me-3" 
+                                                            alt="{{ item.producto.nombre }}">
+                                                        <div class="flex-grow-1 text-start">
+                                                            <h6 class="mb-1">{{ item.producto.nombre }}</h6>
+                                                            <p class="mb-0">Cantidad: {{ item.cantidad }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center">No hay paquetes generados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

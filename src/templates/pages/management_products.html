@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Productos{% endblock %}
+
+{% block body %}
+
+
+<nav class="navbar bg-dark fixed-top" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">
+        <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" width="40" height="40">
+        La Poblanita - Productos
+    </a>
+    <div class="d-flex align-items-center">
+        <!-- Foto perfil -->
+        <a href="{{ url_for('profile') }}" class="me-3">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+        </a>
+        <a href="{{ url_for('home') }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-house"></i> Inicio
+        </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+    <!-- Botones de acción -->
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>Error al eliminar producto:</strong> 
+        <div class="mt-2">{{ error | safe }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <span class="text-white" id="contador-seleccion">0 productos seleccionados</span>
+        <div class="d-flex flex-column gap-2">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+                <i class="bi bi-plus"></i> Nuevo producto
+            </button>
+            <button class="btn btn-warning" id="btnGenerarPaquete" disabled>
+                <i class="bi bi-box-seam"></i> Generar paquete
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla de Productos -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Nombre</th>
+                            <th width="100">Stock</th>
+                            <th width="80">Imagen</th>
+                            <th width="150">Seleccionar</th>
+                            <th width="150">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr data-producto-id="{{ producto.id_producto }}">
+                            <td>{{ producto.id_producto }}</td>
+                            <td>{{ producto.nombre }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ producto.cantidad }}</span>
+                                <div class="progress mt-1" style="height: 5px;">
+                                    {% set max_stock = 100 %}
+                                    {% set porcentaje = (producto.cantidad / max_stock) * 100 %}
+                                    {% set porcentaje = porcentaje if porcentaje <= 100 else 100 %}
+                                    <div class="progress-bar 
+                                        {% if producto.cantidad == 0 %}bg-danger
+                                        {% elif producto.cantidad < 10 %}bg-warning
+                                        {% elif producto.cantidad < 25 %}bg-info
+                                        {% else %}bg-success{% endif %}" 
+                                        style="width: {{ '%.1f'|format(porcentaje) }}%">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <img src="{{ url_for('product_image', producto_id=producto.id_producto) }}" 
+                                     width="40" height="40" class="rounded">
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control cantidad-input" 
+                                           min="0" max="{{ producto.cantidad }}" 
+                                           placeholder="0" style="width: 70px;">
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditar" 
+                                        data-id="{{ producto.id_producto }}"
+                                        data-nombre="{{ producto.nombre }}"
+                                        data-cantidad="{{ producto.cantidad }}">
+                                    Editar
+                                </button>
+                                <form method="POST" action="{{ url_for('delete_product', id=producto.id_producto) }}" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm">Borrar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No hay productos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Producto -->
+<div class="modal fade" id="modalAgregar">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required>
+                    <input type="number" name="cantidad" class="form-control mb-2" placeholder="Cantidad" min="0" required>
+                    <input type="file" name="imagen" class="form-control" accept="image/*">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Agregar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="modalEditar">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="formEditar" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required>
+                    <input type="number" name="cantidad" class="form-control mb-2" placeholder="Cantidad" min="0" required>
+                    <input type="file" name="imagen" class="form-control" accept="image/*">
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario oculto para generar paquete -->
+<form method="POST" action="{{ url_for('generate_package') }}" id="formPaquete" style="display: none;">
+    <input type="hidden" name="productos_data" id="productosData">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cantidadInputs = document.querySelectorAll('.cantidad-input');
+    const btnGenerar = document.getElementById('btnGenerarPaquete');
+    const contador = document.getElementById('contador-seleccion');
+    const formPaquete = document.getElementById('formPaquete');
+    const productosData = document.getElementById('productosData');
+
+    // Modal editar
+    const modalEditar = document.getElementById('modalEditar');
+    modalEditar.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const form = document.getElementById('formEditar');
+        form.action = `/products/edit/${button.dataset.id}`;
+        form.querySelector('input[name="nombre"]').value = button.dataset.nombre;
+        form.querySelector('input[name="cantidad"]').value = button.dataset.cantidad;
+    });
+
+    // Control de selección
+    function actualizarSeleccion() {
+        let totalSeleccionados = 0;
+        let productosSeleccionados = [];
+        
+        cantidadInputs.forEach(input => {
+            const cantidad = parseInt(input.value) || 0;
+            if (cantidad > 0) {
+                totalSeleccionados++;
+                const productoId = input.closest('tr').dataset.productoId;
+                productosSeleccionados.push({
+                    id: productoId,
+                    cantidad: cantidad
+                });
+            }
+        });
+        
+        contador.textContent = `${totalSeleccionados} productos seleccionados`;
+        btnGenerar.disabled = totalSeleccionados === 0;
+        
+        // Guardar datos para el formulario
+        productosData.value = JSON.stringify(productosSeleccionados);
+    }
+
+    cantidadInputs.forEach(input => {
+        input.addEventListener('input', actualizarSeleccion);
+    });
+
+    btnGenerar.addEventListener('click', function() {
+        formPaquete.submit();
+    });
+});
+</script>
+{% endblock %}

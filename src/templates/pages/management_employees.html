@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Empleados{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">
+        <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" width="40" height="40">
+        La Poblanita - Empleados
+    </a>
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('profile') }}" class="me-3">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" class="rounded-circle" width="35" height="35">
+        </a>
+        <a href="{{ url_for('home') }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-house"></i> Inicio
+        </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+    {% if usuario.rol in ['admin', 'boss'] %}
+    <!-- Contenido para admin y boss -->
+    <div class="d-flex justify-content-end align-items-center mb-4">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+            <i class="bi bi-person-plus"></i> Nuevo empleado
+        </button>
+    </div>
+
+    <!-- Tabla de Empleados -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in empleados %}
+                        <tr>
+                            <td>
+                                <img src="{{ url_for('profile_picture', usuario_id=emp.id_empleado) }}" 
+                                     width="30" height="30" class="rounded-circle me-2">
+                                {{ emp.nombre_usuario }}
+                            </td>
+                            <td>{{ emp.nombre or 'N/A' }} {{ emp.apellidoP or '' }}</td>
+                            <td>{{ emp.email or 'N/A' }}</td>
+                            <td>{{ emp.telefono }}</td>
+                            <td>
+                                {% if usuario.rol == 'boss' and emp.id_empleado != usuario.id_empleado %}
+                                <form method="POST" action="{{ url_for('update_employee_role', id=emp.id_empleado) }}" class="d-inline">
+                                    <select name="rol" class="form-select form-select-sm" onchange="this.form.submit()">
+                                        <option value="user" {% if emp.rol == 'user' %}selected{% endif %}>Usuario</option>
+                                        <option value="admin" {% if emp.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                                        <option value="boss" {% if emp.rol == 'boss' %}selected{% endif %}>Jefe</option>
+                                    </select>
+                                </form>
+                                {% else %}
+                                <span class="badge 
+                                    {% if emp.rol == 'boss' %}bg-danger
+                                    {% elif emp.rol == 'admin' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ emp.rol | upper }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if emp.id_empleado != usuario.id_empleado %}
+                                    {% if (usuario.rol == 'boss') or (usuario.rol == 'admin' and emp.rol == 'user') %}
+                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#modalEditar{{ emp.id_empleado }}">
+                                        Editar
+                                    </button>
+                                    <form method="POST" action="{{ url_for('delete_employee', id=emp.id_empleado) }}" 
+                                          class="d-inline">
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                                onclick="return confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.nombre }} {{ emp.apellidoP }} {{ emp.apellidoM }}?')">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted">Sin permisos</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-muted">Tú</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Modal Editar Empleado -->
+                        <div class="modal fade" id="modalEditar{{ emp.id_empleado }}">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Editar Empleado</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('edit_employee', id=emp.id_empleado) }}" enctype="multipart/form-data">
+                                        <div class="modal-body">
+                                            <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" value="{{ emp.nombre or '' }}">
+                                            <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno" value="{{ emp.apellidoP or '' }}">
+                                            <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno" value="{{ emp.apellidoM or '' }}">
+                                            <input type="email" name="email" class="form-control mb-2" placeholder="Email" value="{{ emp.email or '' }}">
+                                            <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" value="{{ emp.telefono }}" required>
+                                            <input type="text" name="calle" class="form-control mb-2" placeholder="Calle" value="{{ emp.calle or '' }}">
+                                            <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número" value="{{ emp.no_exterior or '' }}">
+                                            <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia" value="{{ emp.colonia or '' }}">
+                                            <input type="file" name="foto_perfil" class="form-control" accept="image/*">
+                                            {% if usuario.rol == 'boss' %}
+                                            <select name="rol" class="form-select mt-2">
+                                                <option value="user" {% if emp.rol == 'user' %}selected{% endif %}>Usuario</option>
+                                                <option value="admin" {% if emp.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                                                <option value="boss" {% if emp.rol == 'boss' %}selected{% endif %}>Jefe</option>
+                                            </select>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary">Actualizar</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Empleado -->
+    <div class="modal fade" id="modalAgregar">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_employee') }}" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="text" name="nombre_usuario" class="form-control mb-2" placeholder="Usuario" required>
+                        <input type="password" name="contraseña" class="form-control mb-2" placeholder="Contraseña" required>
+                        <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" required>
+                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre">
+                        <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno">
+                        <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno">
+                        <input type="email" name="email" class="form-control mb-2" placeholder="Email">
+                        <input type="text" name="calle" class="form-control mb-2" placeholder="Calle">
+                        <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número">
+                        <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia">
+                        <input type="file" name="foto_perfil" class="form-control" accept="image/*">
+                        {% if usuario.rol == 'boss' %}
+                        <select name="rol" class="form-select mt-2">
+                            <option value="user">Usuario</option>
+                            <option value="admin">Administrador</option>
+                            <option value="boss">Jefe</option>
+                        </select>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Agregar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Mensaje de acceso denegado para usuarios normales -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-shield-exclamation display-1 text-warning"></i>
+                    </div>
+                    <h3 class="card-title text-warning">Acceso Denegado</h3>
+                    <p class="card-text text-muted mb-4">
+                        No tienes permisos para acceder a la gestión de empleados. 
+                        Esta sección está reservada para administradores y jefes.
+                    </p>
+                    <a href="{{ url_for('home') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

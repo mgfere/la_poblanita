@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Perfil{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand text-white" href="{{ url_for('profile') }}">
+            <i class="bi bi-pencil"></i> Editar Perfil
+        </a>
+    </div>
+</nav>
+
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+                    <form method="POST" action="{{ url_for('profile_edit') }}" enctype="multipart/form-data">
+                        <div class="text-center mb-3">
+                            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" 
+                                 class="rounded-circle mb-2" width="80" height="80">
+                            <input type="file" name="foto_perfil" class="form-control form-control-sm" accept="image/*">
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <input type="text" name="nombre" class="form-control form-control-sm" 
+                                       value="{{ usuario.nombre or '' }}" placeholder="Nombre(s)">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="apellidoP" class="form-control form-control-sm" 
+                                       value="{{ usuario.apellidoP or '' }}" placeholder="Apellido Paterno">
+                            </div>
+                            <div class="col-6">
+                                <input type="text" name="apellidoM" class="form-control form-control-sm" 
+                                       value="{{ usuario.apellidoM or '' }}" placeholder="Apellido Materno">
+                            </div>
+                            <div class="col-12">
+                                <input type="email" name="email" class="form-control form-control-sm" 
+                                       value="{{ usuario.email or '' }}" placeholder="Email">
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="telefono" class="form-control form-control-sm" 
+                                       value="{{ usuario.telefono }}" placeholder="Teléfono" required>
+                            </div>
+                            <div class="col-8">
+                                <input type="text" name="calle" class="form-control form-control-sm" 
+                                       value="{{ usuario.calle or '' }}" placeholder="Calle">
+                            </div>
+                            <div class="col-4">
+                                <input type="text" name="no_exterior" class="form-control form-control-sm" 
+                                       value="{{ usuario.no_exterior or '' }}" placeholder="Número">
+                            </div>
+                            <div class="col-12">
+                                <input type="text" name="colonia" class="form-control form-control-sm" 
+                                       value="{{ usuario.colonia or '' }}" placeholder="Colonia">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-1 mt-3">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-floppy"></i> Guardar
+                            </button>
+                            <a href="{{ url_for('profile') }}" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-x-lg"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

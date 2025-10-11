@@ -1,0 +1,48 @@
+{% extends './base.html' %}
+
+{% block title %}Registro{% endblock %}
+
+{% block body %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100" data-bs-theme="dark">
+    <div class="card shadow-sm border-1" style="max-width: 350px; width: 100%;">
+        <div class="card-body p-4">
+            
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            <div class="text-center mb-3">
+                <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" alt="Logo La Poblanita" class="img-fluid" width="150">
+            </div>
+            <h5 class="card-title text-center mb-4">Registrarse</h5>
+
+            <form action="/register" method="post">
+                <div class="form-floating mb-2">
+                    <input type="telefono" class="form-control form-control-sm" id="telefono" name="telefono" placeholder="Ingresa tu teléfono" required>
+                    <label for="telefono" class="form-label small text-muted">
+                        <i class="bi bi-telephone me-1"></i> Número de teléfono
+                    </label>
+                </div>
+                <div class="form-floating mb-2">
+                    <input type="nombre_usuario" class="form-control form-control-sm" id="nombre_usuario" name="nombre_usuario" placeholder="Ingresa tu usuario" required>
+                    <label for="nombre_usuario" class="form-label small text-muted">
+                        <i class="bi bi-person me-1"></i> Nombre de usuario
+                    </label>
+                </div>
+                <div class="form-floating mb-2">
+                    <input type="contraseña" class="form-control form-control-sm" id="contraseña" name="contraseña" placeholder="Ingresa tu contraseña" required>
+                    <label for="contraseña" class="form-label small text-muted">
+                        <i class="bi bi-lock me-1"></i> Contraseña
+                    </label>
+                </div>
+                <p class="mt-3">¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></p>
+                <button type="submit" class="btn btn-primary w-100 btn-sm py-2">
+                    Registrarse
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

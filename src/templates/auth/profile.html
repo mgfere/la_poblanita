@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand text-white" href="{{ url_for('home') }}">
+            <i class="bi bi-person"></i> Perfil
+        </a>
+    </div>
+</nav>
+
+<div class="container mt-5 pt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" 
+                         class="rounded-circle mb-3" width="120" height="120">
+                    
+                    <h5>{{ usuario.nombre_usuario }}</h5>
+                    <p class="text-muted">{{ usuario.nombre or '' }} {{ usuario.apellidoP or '' }}</p>
+                    
+                    <div class="text-start small">
+                        <p><strong>Email:</strong> {{ usuario.email or 'N/A' }}</p>
+                        <p><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
+                        <p><strong>Dirección:</strong> {{ usuario.calle or '' }} {{ usuario.no_exterior or '' }}</p>
+                    </div>
+
+<div class="mt-4">
+    <div class="d-flex flex-column gap-2">
+        <!-- Fila superior: Editar y Volver -->
+        <div class="row g-2">
+            <div class="col-6">
+                <a href="{{ url_for('profile_edit') }}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-pencil"></i> Editar perfil
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary btn-sm w-100">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+        
+        <!-- Fila inferior: Eliminar Foto (ocupa toda la fila) -->
+        <form method="POST" action="{{ url_for('delete_profile_picture') }}" 
+              onsubmit="return confirm('¿Estás seguro de que quieres eliminar tu foto de perfil?')">
+            <button type="submit" class="btn btn-danger btn-sm w-100">
+                <i class="bi bi-trash"></i> Eliminar foto
+            </button>
+        </form>
+    </div>
+</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

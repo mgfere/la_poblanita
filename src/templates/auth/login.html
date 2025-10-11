@@ -1,0 +1,42 @@
+{% extends './base.html' %}
+
+{% block title %}Inicio de sesión{% endblock %}
+
+{% block body %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100" data-bs-theme="dark">
+    <div class="card shadow-sm border-1" style="max-width: 350px; width: 100%;">
+        <div class="card-body p-4">
+            
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+            <div class="text-center mb-3">
+                <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" alt="Logo La Poblanita" class="img-fluid" width="150">
+            </div>
+            <h5 class="card-title text-center mb-4">Iniciar sesión</h5>
+
+            <form action="/login" method="post">
+                <div class="form-floating mb-2">
+                    <input type="nombre_usuario" class="form-control form-control-sm" id="nombre_usuario" name="nombre_usuario" placeholder="Ingresa tu usuario" required>
+                    <label for="nombre_usuario" class="form-label small text-muted">
+                        <i class="bi bi-person me-1"></i> Usuario
+                    </label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="contraseña" class="form-control form-control-sm" id="contraseña" name="contraseña" placeholder="Ingresa tu contraseña" required>
+                    <label for="contraseña" class="form-label small text-muted">
+                        <i class="bi bi-lock me-1"></i> Contraseña
+                    </label>
+                </div>
+                <p class="mt-3">¿No tienes cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a></p>
+                <button type="submit" class="btn btn-primary w-100 btn-sm py-2">
+                    Iniciar sesión
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
