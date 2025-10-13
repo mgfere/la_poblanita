@@ -105,13 +105,14 @@ class Paquetes(Base):
     __tablename__ = 'paquete'
     
     id_paquete = Column(Integer, primary_key=True, autoincrement=True)
+    sucursal = Column(Text, nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
     
     # Agregar esta relación
     productos = relationship("PaqueteProducto", cascade="all, delete-orphan")
 
-    def __init__(self):
-        pass  # El ID se auto-genera
+    def __init__(self, sucursal="Por asignar"):  # VALOR POR DEFECTO
+        self.sucursal = sucursal
 
     def __repr__(self):
         return f'<Paquete {self.id_paquete}>'

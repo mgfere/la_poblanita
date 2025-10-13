@@ -5,7 +5,7 @@ from database.models import Empleados, Productos, Paquetes, PaqueteProducto
 import json
 
 app = Flask(__name__)
-app.secret_key = 'tu_clave_secreta'
+app.secret_key = 'LA POBLANITA'
 
 # ===== FUNCIONES AUXILIARES =====
 def get_usuario_actual():
@@ -102,7 +102,7 @@ def products():  # QUITADO: @requiere_rol('admin', 'boss')
 
 @app.route('/products/add', methods=['POST'])
 @requiere_login
-@requiere_rol('admin', 'boss')  # Solo admin/boss pueden agregar
+@requiere_rol('user', 'admin', 'boss')
 def add_product():
     try:
         producto = Productos(request.form['nombre'], int(request.form['cantidad']), session['usuario_id'])
@@ -115,7 +115,7 @@ def add_product():
 
 @app.route('/products/edit/<int:id>', methods=['POST'])
 @requiere_login
-@requiere_rol('admin', 'boss')  # Solo admin/boss pueden editar
+@requiere_rol('user', 'admin', 'boss')
 def edit_product(id):
     producto = db_session.query(Productos).filter_by(id_producto=id).first()
     if producto:
@@ -129,7 +129,7 @@ def edit_product(id):
 
 @app.route('/products/delete/<int:id>', methods=['POST'])
 @requiere_login
-@requiere_rol('admin', 'boss')
+@requiere_rol('user', 'admin', 'boss')
 def delete_product(id):
     producto = db_session.query(Productos).filter_by(id_producto=id).first()
     if producto:
@@ -168,7 +168,7 @@ def generate_package():
         insuficientes = validar_stock_paquete(productos_seleccionados)
         
         if insuficientes:
-            error_msg = "No hay suficiente stock para:\n" + "\n".join([f"- {p['nombre']}: Solicitado {p['solicitado']}, Disponible {p['disponible']}" for p in insuficientes])
+            error_msg = "No se puede generar el paquete ya que no hay suficiente stock para\n" + "\n".join([f"( {p['nombre']}: Solicitado {p['solicitado']}, Disponible {p['disponible']} )" for p in insuficientes])
             return render_template('pages/management_products.html', productos=db_session.query(Productos).all(), usuario=get_usuario_actual(), error=error_msg)
         
         paquete = Paquetes()
@@ -208,10 +208,34 @@ def generate_package():
 
 @app.route('/packages/confirm/<int:id>', methods=['POST'])
 @requiere_login
-def confirm_package(id):  # QUITADO: @requiere_rol('admin', 'boss')
+def confirm_package(id):
     try:
+        sucursal = request.form.get('sucursal')  # OBTENER LA SUCURSAL
+        
+        if not sucursal:
+            error_msg = "Por favor selecciona una sucursal"
+            paquete = db_session.query(Paquetes).filter_by(id_paquete=id).first()
+            productos_del_paquete = []
+            if paquete:
+                for item in paquete.productos:
+                    producto = db_session.query(Productos).filter_by(id_producto=item.id_producto).first()
+                    if producto:
+                        productos_del_paquete.append({
+                            'producto': producto,
+                            'cantidad': item.cantidad
+                        })
+            return render_template('pages/confirm_package.html', 
+                                 paquete=paquete, 
+                                 productos_del_paquete=productos_del_paquete,
+                                 usuario=get_usuario_actual(),
+                                 error="Por favor selecciona una sucursal")
+        
         paquete = db_session.query(Paquetes).filter_by(id_paquete=id).first()
-        if not paquete: return redirect(url_for('products'))
+        if not paquete: 
+            return redirect(url_for('products'))
+        
+        # ACTUALIZAR LA SUCURSAL DEL PAQUETE
+        paquete.sucursal = sucursal
         
         insuficientes = []
         for item in paquete.productos:
@@ -227,7 +251,8 @@ def confirm_package(id):  # QUITADO: @requiere_rol('admin', 'boss')
         
         for item in paquete.productos:
             producto = db_session.query(Productos).filter_by(id_producto=item.id_producto).first()
-            if producto: producto.cantidad -= item.cantidad
+            if producto: 
+                producto.cantidad -= item.cantidad
         
         db_session.commit()
         return redirect(url_for('packages'))
@@ -239,19 +264,19 @@ def confirm_package(id):  # QUITADO: @requiere_rol('admin', 'boss')
 
 @app.route('/packages/cancel/<int:id>', methods=['POST'])
 @requiere_login
-def cancel_package(id):  # QUITADO: @requiere_rol('admin', 'boss')
+def cancel_package(id):
     paquete = db_session.query(Paquetes).filter_by(id_paquete=id).first()
     if paquete: db_session.delete(paquete); db_session.commit()
     return redirect(url_for('products'))
 
 @app.route('/packages')
 @requiere_login
-def packages():  # QUITADO: @requiere_rol('admin', 'boss')
+def packages():
     return render_template('pages/management_packages.html', paquetes=db_session.query(Paquetes).filter(Paquetes.productos.any()).all(), usuario=get_usuario_actual())
 
 @app.route('/packages/delete/<int:id>', methods=['POST'])
 @requiere_login
-@requiere_rol('admin', 'boss')  # Solo admin/boss pueden eliminar paquetes
+@requiere_rol('user', 'admin', 'boss')
 def delete_package(id):
     paquete = db_session.query(Paquetes).filter_by(id_paquete=id).first()
     if paquete:
@@ -283,6 +308,10 @@ def add_employee():
         for campo in ['nombre', 'apellidoP', 'apellidoM', 'email', 'colonia', 'calle', 'no_exterior']:
             if request.form.get(campo): setattr(empleado, campo, request.form[campo])
         
+        # AGREGAR ESTO
+        if 'activo' in request.form:
+            empleado.activo = bool(int(request.form['activo']))
+        
         foto_data = manejar_imagen(request.files.get('foto_perfil'))
         if foto_data: empleado.foto_perfil = foto_data
         
@@ -302,6 +331,10 @@ def edit_employee(id):
         try:
             for campo in ['nombre', 'apellidoP', 'apellidoM', 'email', 'telefono', 'colonia', 'calle', 'no_exterior']:
                 if request.form.get(campo): setattr(empleado, campo, request.form[campo])
+            
+            # AGREGAR ESTO PARA EL CAMPO ACTIVO
+            if 'activo' in request.form:
+                empleado.activo = bool(int(request.form['activo']))
             
             if usuario_actual.rol == 'boss' and 'rol' in request.form:
                 nuevo_rol = request.form['rol']
@@ -379,6 +412,15 @@ def delete_profile_picture():
     usuario.foto_perfil = None
     db_session.commit()
     return redirect(url_for('profile'))
+
+@app.route('/profile/other/<int:id>')
+@requiere_login
+@requiere_rol('admin', 'boss')  # Solo admin/boss pueden ver perfiles de otros
+def profile_other(id):
+    empleado = db_session.query(Empleados).filter_by(id_empleado=id).first()
+    if not empleado:
+        return redirect(url_for('employees'))
+    return render_template('auth/profile_other.html', empleado=empleado, usuario=get_usuario_actual())
 
 # ===== RUTAS DE COMPATIBILIDAD =====
 @app.route('/get_foto_perfil/<int:usuario_id>')

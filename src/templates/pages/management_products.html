@@ -28,7 +28,7 @@
     {% if error %}
     <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
         <i class="bi bi-exclamation-triangle-fill"></i>
-        <strong>Error al eliminar producto:</strong> 
+        <strong>Error al eliminar producto o generar paquete:</strong> 
         <div class="mt-2">{{ error | safe }}</div>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -54,18 +54,18 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th width="50">#</th>
+                            <th width="150">ID Producto</th>
                             <th>Nombre</th>
                             <th width="100">Stock</th>
-                            <th width="80">Imagen</th>
-                            <th width="150">Seleccionar</th>
-                            <th width="150">Acciones</th>
+                            <th width="100">Imagen</th>
+                            <th width="100">Seleccionar</th>
+                            <th width="160">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for producto in productos %}
                         <tr data-producto-id="{{ producto.id_producto }}">
-                            <td>{{ producto.id_producto }}</td>
+                            <td>P-{{ loop.index }}</td>
                             <td>{{ producto.nombre }}</td>
                             <td>
                                 <span class="badge bg-secondary">{{ producto.cantidad }}</span>
@@ -102,7 +102,7 @@
                                     Editar
                                 </button>
                                 <form method="POST" action="{{ url_for('delete_product', id=producto.id_producto) }}" 
-                                      class="d-inline">
+                                    class="d-inline" onsubmit="return confirm('¿Estás seguro de que quieres eliminar el producto {{ producto.nombre }}?');">
                                     <button type="submit" class="btn btn-danger btn-sm">Borrar</button>
                                 </form>
                             </td>

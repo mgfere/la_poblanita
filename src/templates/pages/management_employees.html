@@ -36,7 +36,7 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>Usuario</th>
+                            <th>Foto</th>
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Teléfono</th>
@@ -48,50 +48,40 @@
                         {% for emp in empleados %}
                         <tr>
                             <td>
-                                <img src="{{ url_for('profile_picture', usuario_id=emp.id_empleado) }}" 
-                                     width="30" height="30" class="rounded-circle me-2">
-                                {{ emp.nombre_usuario }}
+                                <img src="{{ url_for('profile_picture', usuario_id=emp.id_empleado) }}" width="30" height="30" class="rounded-circle me-2">
                             </td>
                             <td>{{ emp.nombre or 'N/A' }} {{ emp.apellidoP or '' }}</td>
                             <td>{{ emp.email or 'N/A' }}</td>
                             <td>{{ emp.telefono }}</td>
                             <td>
-                                {% if usuario.rol == 'boss' and emp.id_empleado != usuario.id_empleado %}
-                                <form method="POST" action="{{ url_for('update_employee_role', id=emp.id_empleado) }}" class="d-inline">
-                                    <select name="rol" class="form-select form-select-sm" onchange="this.form.submit()">
-                                        <option value="user" {% if emp.rol == 'user' %}selected{% endif %}>Usuario</option>
-                                        <option value="admin" {% if emp.rol == 'admin' %}selected{% endif %}>Administrador</option>
-                                        <option value="boss" {% if emp.rol == 'boss' %}selected{% endif %}>Jefe</option>
-                                    </select>
-                                </form>
-                                {% else %}
                                 <span class="badge 
                                     {% if emp.rol == 'boss' %}bg-danger
-                                    {% elif emp.rol == 'admin' %}bg-warning
+                                    {% elif emp.rol == 'admin' %}bg-success
                                     {% else %}bg-secondary{% endif %}">
                                     {{ emp.rol | upper }}
                                 </span>
-                                {% endif %}
                             </td>
                             <td>
+                                <!-- Botón Ver Perfil -->
+                                <a href="{{ url_for('profile_other', id=emp.id_empleado) }}" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-eye"></i> Perfil
+                                </a>
                                 {% if emp.id_empleado != usuario.id_empleado %}
                                     {% if (usuario.rol == 'boss') or (usuario.rol == 'admin' and emp.rol == 'user') %}
+                                    <!-- Botón Editar -->
                                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
                                             data-bs-target="#modalEditar{{ emp.id_empleado }}">
-                                        Editar
+                                        <i class="bi bi-pencil"></i> Editar
                                     </button>
+                                    <!-- Botón Eliminar -->
                                     <form method="POST" action="{{ url_for('delete_employee', id=emp.id_empleado) }}" 
-                                          class="d-inline">
+                                        class="d-inline">
                                         <button type="submit" class="btn btn-danger btn-sm"
                                                 onclick="return confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.nombre }} {{ emp.apellidoP }} {{ emp.apellidoM }}?')">
-                                            Eliminar
+                                            <i class="bi bi-trash"></i> Eliminar
                                         </button>
                                     </form>
-                                    {% else %}
-                                    <span class="text-muted">Sin permisos</span>
                                     {% endif %}
-                                {% else %}
-                                <span class="text-muted">Tú</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -120,6 +110,10 @@
                                                 <option value="user" {% if emp.rol == 'user' %}selected{% endif %}>Usuario</option>
                                                 <option value="admin" {% if emp.rol == 'admin' %}selected{% endif %}>Administrador</option>
                                                 <option value="boss" {% if emp.rol == 'boss' %}selected{% endif %}>Jefe</option>
+                                            </select>
+                                            <select name="activo" class="form-select mt-2">
+                                                <option value="1" {% if emp.activo %}selected{% endif %}>Activo</option>
+                                                <option value="0" {% if not emp.activo %}selected{% endif %}>Inactivo</option>
                                             </select>
                                             {% endif %}
                                         </div>

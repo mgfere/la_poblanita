@@ -29,6 +29,16 @@
                         </div>
                     </div>
 
+                    <!-- Selector de Sucursal -->
+                    <div class="mb-4">
+                        <select name="sucursal" class="form-select" required>
+                            <option value="">Selecciona una sucursal</option>
+                            <option value="La Poblanita Suc. Longoria">La Poblanita Suc. Longoria</option>
+                            <option value="La Poblanita Suc. Jarachina Sur">La Poblanita Suc. Jarachina Sur</option>
+                            <option value="La Cocina de Doña de Cristy">La Cocina de Doña de Cristy</option>
+                        </select>
+                    </div>
+
                     <!-- Productos del paquete -->
                     <h6>Productos incluidos:</h6>
                     <div class="table-responsive">
@@ -80,23 +90,6 @@
                         </table>
                     </div>
 
-                    <!-- Advertencia si hay productos con stock insuficiente -->
-                    {% if productos_insuficientes %}
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Advertencia:</strong> Los siguientes productos no tienen suficiente stock:
-                        <ul class="mb-0 mt-2">
-                            {% for item in productos_insuficientes %}
-                            <li>
-                                <strong>{{ item.producto.nombre }}</strong>: 
-                                Solicitado {{ item.cantidad }}, Disponible {{ item.producto.cantidad }}
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        <small class="d-block mt-2">Si confirma el paquete, estos productos no se incluirán.</small>
-                    </div>
-                    {% endif %}
-
                     <!-- Resumen del paquete -->
                     <div class="alert alert-info">
                         <strong>Resumen:</strong> 
@@ -113,13 +106,13 @@
                     <div class="d-flex justify-content-center justify-content-md-end mt-4 gap-3">
                         <form method="POST" action="{{ url_for('cancel_package', id=paquete.id_paquete) }}">
                             <button type="submit" class="btn btn-secondary" 
-                                    onclick="return confirm('¿Está seguro de cancelar este paquete?')">
+                                    onclick="return confirm('¿Está seguro de que quiere cancelar este paquete?')">
                                 <i class="bi bi-x-lg"></i> Cancelar paquete
                             </button>
                         </form>
-                        <form method="POST" action="{{ url_for('confirm_package', id=paquete.id_paquete) }}">
-                            <button type="submit" class="btn btn-success"
-                                    onclick="return confirm('¿Confirmar la creación de este paquete? Se reducirá el stock de los productos con stock suficiente.')">
+                        <form method="POST" action="{{ url_for('confirm_package', id=paquete.id_paquete) }}" id="formConfirmar">
+                            <input type="hidden" name="sucursal" id="sucursalInput">
+                            <button type="button" class="btn btn-success" id="btnConfirmar">
                                 <i class="bi bi-check"></i> Confirmar paquete
                             </button>
                         </form>
@@ -129,4 +122,27 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnConfirmar = document.getElementById('btnConfirmar');
+    const selectSucursal = document.querySelector('select[name="sucursal"]');
+    const sucursalInput = document.getElementById('sucursalInput');
+    const formConfirmar = document.getElementById('formConfirmar');
+
+    btnConfirmar.addEventListener('click', function() {
+        const sucursal = selectSucursal.value;
+        
+        if (!sucursal) {
+            alert('Por favor selecciona una sucursal');
+            return;
+        }
+
+        if (confirm('La creación de este paquete para ' + sucursal + '\nreducirá el stock de los productos seleccionados.')) {
+            sucursalInput.value = sucursal;
+            formConfirmar.submit();
+        }
+    });
+});
+</script>
 {% endblock %}

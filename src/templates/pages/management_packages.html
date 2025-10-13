@@ -30,6 +30,7 @@
                         <tr>
                             <th>ID Paquete</th>
                             <th>Fecha</th>
+                            <th>Sucursal</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -38,6 +39,7 @@
                         <tr>
                             <td>PQ-{{ paquete.id_paquete }}</td>
                             <td>{{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ paquete.sucursal }}</td>
                             <td>
                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
                                         data-bs-target="#modalVer{{ paquete.id_paquete }}">
@@ -46,7 +48,7 @@
                                 <form method="POST" action="{{ url_for('delete_package', id=paquete.id_paquete) }}" 
                                     class="d-inline">
                                     <button type="submit" class="btn btn-danger btn-sm" 
-                                            onclick="return confirm('ADVERTENCIA:\n¿Desea eliminar el paquete PQ-{{ paquete.id_paquete }}?\n\nATENCIÓN: Los productos de este paquete ya fueron descontados del inventario y no se regresarán al stock.');">
+                                            onclick="return confirm('ADVERTENCIA:\n¿Desea eliminar el paquete PQ-{{ paquete.id_paquete }}?\n\nATENCIÓN:\nLos productos de este paquete ya fueron descontados del inventario y no se regresarán al stock.');">
                                         <i class="bi bi-trash"></i> Borrar
                                     </button>
                                 </form>
@@ -87,7 +89,7 @@
                         </div>
                         {% else %}
                         <tr>
-                            <td colspan="3" class="text-center">No hay paquetes generados</td>
+                            <td colspan="6" class="text-center">No hay paquetes generados</td>
                         </tr>
                         {% endfor %}
                     </tbody>

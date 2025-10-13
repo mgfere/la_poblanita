@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil de {{ empleado.nombre_usuario }}{% endblock %}
+
+{% block body %}
+<nav class="navbar bg-dark fixed-top" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#">
+        <img src="{{ url_for('static', filename='images/logo_la_poblanita.png') }}" width="40" height="40">
+        La Poblanita - Perfiles
+    </a>
+    <div class="d-flex align-items-center">
+        <!-- Foto perfil -->
+        <a href="{{ url_for('profile') }}" class="me-3">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+        </a>
+        <a href="{{ url_for('employees') }}" class="btn btn-sm btn-outline-light">
+            <i class="bi bi-person"></i> Volver
+        </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-3" style="max-width: 800px;">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Perfil de {{ empleado.nombre_usuario }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle mb-3" width="120" height="120">
+                        <h6>{{ empleado.nombre or 'N/A' }} {{ empleado.apellidoP or '' }} {{ empleado.apellidoM or '' }}</h6>
+                        <span class="badge 
+                            {% if empleado.rol == 'boss' %}bg-danger
+                            {% elif empleado.rol == 'admin' %}bg-success
+                            {% else %}bg-secondary{% endif %}">
+                            {{ empleado.rol | upper }}
+                        </span>
+                    </div>
+                    
+                    <div class="container mt-2">
+                        <div class="row justify-content-start">
+                            <div class="col-md-9">
+                                <div class="text-start small">
+                                    <p><strong>Username:</strong> {{ empleado.nombre_usuario }}</p>
+                                    <p><strong>Teléfono:</strong> {{ empleado.telefono }}</p>
+                                    <p><strong>Email:</strong> {{ empleado.email or 'N/A' }}</p>
+                                    <p><strong>Calle:</strong> {{ empleado.calle or '' }} {{ empleado.no_exterior or '' }}</p>
+                                    <p><strong>Colonia:</strong> {{ empleado.colonia or '' }}</p>
+                                    <p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro or '' }}</p>
+                                    <p><strong>Estado:</strong> 
+                                    <span class="badge {% if empleado.activo %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'Activo' if empleado.activo else 'Inactivo' }}
+                                    </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
