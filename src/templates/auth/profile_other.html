@@ -30,7 +30,7 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle mb-3" width="120" height="120">
+                        <img src="{{ url_for('profile_picture', usuario_id=empleado.id_empleado) if empleado and empleado.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle mb-3" width="120" height="120">
                         <h6>{{ empleado.nombre or 'N/A' }} {{ empleado.apellidoP or '' }} {{ empleado.apellidoM or '' }}</h6>
                         <span class="badge 
                             {% if empleado.rol == 'boss' %}bg-danger
