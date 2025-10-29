@@ -1,9 +1,8 @@
-# Base de datos Supabase
+# Base de datos MySQL
 
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-# Configuración para PostgreSQL
 from dotenv import load_dotenv
 import os
 
@@ -15,7 +14,7 @@ DB_HOST = os.getenv('DB_HOST')
 DB_PORT = os.getenv('DB_PORT')
 DB_NAME = os.getenv('DB_NAME')
 
-engine = create_engine(f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
+engine = create_engine(f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 
 
 db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
