@@ -21,13 +21,45 @@
 </nav>
 
 <div class="container mt-5 pt-5">
-    {% if usuario.rol in ['admin', 'boss'] %}
+    {% if usuario.rol.nombre in ['admin', 'boss'] %}
     <!-- Contenido para admin y boss -->
-    <div class="d-flex justify-content-end align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Buscador -->
+        <div class="d-flex align-items-center" style="max-width: 400px;">
+            <form method="GET" action="{{ url_for('employees') }}" class="d-flex w-100">
+                <div class="input-group">
+                    <input type="text" name="busqueda" class="form-control" placeholder="Buscar empleados..." 
+                           value="{{ busqueda or '' }}">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if busqueda %}
+                    <a href="{{ url_for('employees') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregar">
             <i class="bi bi-person-plus"></i> Nuevo empleado
         </button>
     </div>
+
+    <!-- Información de búsqueda -->
+    {% if busqueda %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-info-circle"></i>
+            Resultados de búsqueda para: <strong>"{{ busqueda }}"</strong>
+            <span class="badge bg-primary ms-2">{{ pagination.total }} resultado(s)</span>
+        </div>
+        <a href="{{ url_for('employees') }}" class="btn btn-sm btn-outline-info">
+            <i class="bi bi-x-circle"></i> Limpiar búsqueda
+        </a>
+    </div>
+    {% endif %}
 
     <!-- Tabla de Empleados -->
     <div class="card">
@@ -37,10 +69,12 @@
                     <thead>
                         <tr>
                             <th>Foto</th>
+                            <th>Usuario</th>
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Teléfono</th>
                             <th>Rol</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -50,15 +84,21 @@
                             <td>
                                 <img src="{{ url_for('profile_picture', usuario_id=emp.id_empleado) }}" width="30" height="30" class="rounded-circle me-2">
                             </td>
-                            <td>{{ emp.nombre or 'N/A' }} {{ emp.apellidoP or '' }}</td>
-                            <td>{{ emp.email or 'N/A' }}</td>
+                            <td>{{ emp.nombre_usuario }}</td>
+                            <td>{{ emp.perfil.nombre or 'N/A' }} {{ emp.perfil.apellidoP or '' }}</td>
+                            <td>{{ emp.perfil.email or 'N/A' }}</td>
                             <td>{{ emp.telefono }}</td>
                             <td>
                                 <span class="badge 
-                                    {% if emp.rol == 'boss' %}bg-danger
-                                    {% elif emp.rol == 'admin' %}bg-success
+                                    {% if emp.rol.nombre == 'boss' %}bg-danger
+                                    {% elif emp.rol.nombre == 'admin' %}bg-success
                                     {% else %}bg-secondary{% endif %}">
-                                    {{ emp.rol | upper }}
+                                    {{ emp.rol.nombre | upper }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if emp.activo %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activo' if emp.activo else 'Inactivo' }}
                                 </span>
                             </td>
                             <td>
@@ -67,7 +107,7 @@
                                     <i class="bi bi-eye"></i> Perfil
                                 </a>
                                 {% if emp.id_empleado != usuario.id_empleado %}
-                                    {% if (usuario.rol == 'boss') or (usuario.rol == 'admin' and emp.rol == 'user') %}
+                                    {% if (usuario.rol.nombre == 'boss') or (usuario.rol.nombre == 'admin' and emp.rol.nombre == 'user') %}
                                     <!-- Botón Editar -->
                                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
                                             data-bs-target="#modalEditar{{ emp.id_empleado }}">
@@ -77,7 +117,7 @@
                                     <form method="POST" action="{{ url_for('delete_employee', id=emp.id_empleado) }}" 
                                         class="d-inline">
                                         <button type="submit" class="btn btn-danger btn-sm"
-                                                onclick="return confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.nombre }} {{ emp.apellidoP }} {{ emp.apellidoM }}?')">
+                                                onclick="return confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.perfil.nombre }} {{ emp.perfil.apellidoP }} {{ emp.perfil.apellidoM }}?')">
                                             <i class="bi bi-trash"></i> Eliminar
                                         </button>
                                     </form>
@@ -96,26 +136,30 @@
                                     </div>
                                     <form method="POST" action="{{ url_for('edit_employee', id=emp.id_empleado) }}" enctype="multipart/form-data">
                                         <div class="modal-body">
-                                            <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" value="{{ emp.nombre or '' }}">
-                                            <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno" value="{{ emp.apellidoP or '' }}">
-                                            <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno" value="{{ emp.apellidoM or '' }}">
-                                            <input type="email" name="email" class="form-control mb-2" placeholder="Email" value="{{ emp.email or '' }}">
+                                            <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" value="{{ emp.perfil.nombre or '' }}">
+                                            <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno" value="{{ emp.perfil.apellidoP or '' }}">
+                                            <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno" value="{{ emp.perfil.apellidoM or '' }}">
+                                            <input type="email" name="email" class="form-control mb-2" placeholder="Email" value="{{ emp.perfil.email or '' }}">
                                             <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" value="{{ emp.telefono }}" required>
-                                            <input type="text" name="calle" class="form-control mb-2" placeholder="Calle" value="{{ emp.calle or '' }}">
-                                            <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número" value="{{ emp.no_exterior or '' }}">
-                                            <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia" value="{{ emp.colonia or '' }}">
+                                            <input type="text" name="calle" class="form-control mb-2" placeholder="Calle" value="{{ emp.perfil.calle or '' }}">
+                                            <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número" value="{{ emp.perfil.no_exterior or '' }}">
+                                            <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia" value="{{ emp.perfil.colonia or '' }}">
                                             <input type="file" name="foto_perfil" class="form-control" accept="image/*">
-                                            {% if usuario.rol == 'boss' %}
-                                            <select name="rol" class="form-select mt-2">
-                                                <option value="user" {% if emp.rol == 'user' %}selected{% endif %}>Usuario</option>
-                                                <option value="admin" {% if emp.rol == 'admin' %}selected{% endif %}>Administrador</option>
-                                                <option value="boss" {% if emp.rol == 'boss' %}selected{% endif %}>Jefe</option>
+                                            
+                                            {% if usuario.rol.nombre == 'boss' %}
+                                            <select name="id_rol" class="form-select mt-2">
+                                                {% for rol in roles %}
+                                                <option value="{{ rol.id_rol }}" {% if emp.rol.id_rol == rol.id_rol %}selected{% endif %}>
+                                                    {{ rol.nombre | capitalize }}
+                                                </option>
+                                                {% endfor %}
                                             </select>
+                                            {% endif %}
+                                            
                                             <select name="activo" class="form-select mt-2">
                                                 <option value="1" {% if emp.activo %}selected{% endif %}>Activo</option>
                                                 <option value="0" {% if not emp.activo %}selected{% endif %}>Inactivo</option>
                                             </select>
-                                            {% endif %}
                                         </div>
                                         <div class="modal-footer">
                                             <button type="submit" class="btn btn-primary">Actualizar</button>
@@ -125,9 +169,73 @@
                                 </div>
                             </div>
                         </div>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                {% if busqueda %}
+                                <div class="text-muted">
+                                    <i class="bi bi-search display-4"></i>
+                                    <h5>No se encontraron empleados</h5>
+                                    <p>No hay resultados para "{{ busqueda }}"</p>
+                                    <a href="{{ url_for('employees') }}" class="btn btn-primary">
+                                        <i class="bi bi-arrow-left"></i> Ver todos los empleados
+                                    </a>
+                                </div>
+                                {% else %}
+                                <div class="text-muted">
+                                    <i class="bi bi-people display-4"></i>
+                                    <h5>No hay empleados registrados</h5>
+                                    <p>Comienza agregando el primer empleado</p>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Paginación para Empleados -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <!-- Botón Anterior -->
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('employees', pagina=pagination.prev_num, busqueda=busqueda) if pagination.has_prev else '#' }}">
+                            <i class="bi bi-chevron-left"></i>---
+                        </a>
+                    </li>
+
+                    <!-- Números de página -->
+                    {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('employees', pagina=page_num, busqueda=busqueda) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Botón Siguiente -->
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('employees', pagina=pagination.next_num, busqueda=busqueda) if pagination.has_next else '#' }}">
+                            ---<i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            <!-- Información de paginación -->
+            <div class="text-center text-muted small mt-2">
+                Mostrando {{ empleados|length }} de {{ pagination.total }} empleados
+                (Página {{ pagination.page }} de {{ pagination.pages }})
+                {% if busqueda %}
+                <span class="badge bg-info ms-2">Búsqueda: "{{ busqueda }}"</span>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -153,13 +261,19 @@
                         <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número">
                         <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia">
                         <input type="file" name="foto_perfil" class="form-control" accept="image/*">
-                        {% if usuario.rol == 'boss' %}
-                        <select name="rol" class="form-select mt-2">
-                            <option value="user">Usuario</option>
-                            <option value="admin">Administrador</option>
-                            <option value="boss">Jefe</option>
+                        
+                        {% if usuario.rol.nombre == 'boss' %}
+                        <select name="id_rol" class="form-select mt-2">
+                            {% for rol in roles %}
+                            <option value="{{ rol.id_rol }}">{{ rol.nombre | capitalize }}</option>
+                            {% endfor %}
                         </select>
                         {% endif %}
+                        
+                        <select name="activo" class="form-select mt-2">
+                            <option value="1" selected>Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-success">Agregar</button>

@@ -22,12 +22,12 @@
                     <div class="text-center mb-4">
                         <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" 
                              class="rounded-circle mb-3" width="120" height="120">
-                        <h6>{{ usuario.nombre or 'N/A' }} {{ usuario.apellidoP or '' }} {{ usuario.apellidoM or '' }}</h6>
+                        <h6>{{ perfil.nombre or 'N/A' }} {{ perfil.apellidoP or '' }} {{ perfil.apellidoM or '' }}</h6>
                         <span class="badge 
-                            {% if usuario.rol == 'boss' %}bg-danger
-                            {% elif usuario.rol == 'admin' %}bg-success
+                            {% if usuario.rol.nombre == 'boss' %}bg-danger
+                            {% elif usuario.rol.nombre == 'admin' %}bg-success
                             {% else %}bg-secondary{% endif %}">
-                            {{ usuario.rol | upper }}
+                            {{ usuario.rol.nombre | upper }}
                         </span>
                     </div>
                     
@@ -37,10 +37,10 @@
                                 <div class="text-start small">
                                     <p><strong>Username:</strong> {{ usuario.nombre_usuario }}</p>
                                     <p><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
-                                    <p><strong>Email:</strong> {{ usuario.email or 'N/A' }}</p>
-                                    <p><strong>Calle:</strong> {{ usuario.calle or '' }} {{ usuario.no_exterior or '' }}</p>
-                                    <p><strong>Colonia:</strong> {{ usuario.colonia or '' }}</p>
-                                    <p><strong>Fecha de registro:</strong> {{ usuario.fecha_registro or '' }}</p>
+                                    <p><strong>Email:</strong> {{ perfil.email or 'N/A' }}</p>
+                                    <p><strong>Calle:</strong> {{ perfil.calle or '' }} {{ perfil.no_exterior or '' }}</p>
+                                    <p><strong>Colonia:</strong> {{ perfil.colonia or '' }}</p>
+                                    <p><strong>Fecha de registro:</strong> {{ usuario.fecha_registro.strftime('%d/%m/%Y') if usuario.fecha_registro else 'N/A' }}</p>
                                     <p><strong>Estado:</strong> 
                                     <span class="badge {% if usuario.activo %}bg-success{% else %}bg-danger{% endif %}">
                                         {{ 'Activo' if usuario.activo else 'Inactivo' }}
@@ -66,12 +66,14 @@
                                 </div>
                             </div>
                             
+                            {% if perfil and perfil.foto_perfil %}
                             <form method="POST" action="{{ url_for('delete_profile_picture') }}" 
                                   onsubmit="return confirm('¿Estás seguro de que quieres eliminar tu foto de perfil?')">
                                 <button type="submit" class="btn btn-danger btn-sm w-100">
                                     <i class="bi bi-trash"></i> Eliminar foto
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </div>
                     

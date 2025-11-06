@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center">
         <!-- Foto perfil -->
         <a href="{{ url_for('profile') }}" class="me-3">
-            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" class="rounded-circle" width="35" height="35">
         </a>
         <a href="{{ url_for('employees') }}" class="btn btn-sm btn-outline-light">
             <i class="bi bi-person"></i> Volver
@@ -30,13 +30,13 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <img src="{{ url_for('profile_picture', usuario_id=empleado.id_empleado) if empleado and empleado.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle mb-3" width="120" height="120">
-                        <h6>{{ empleado.nombre or 'N/A' }} {{ empleado.apellidoP or '' }} {{ empleado.apellidoM or '' }}</h6>
+                        <img src="{{ url_for('profile_picture', usuario_id=empleado.id_empleado) }}" class="rounded-circle mb-3" width="120" height="120">
+                        <h6>{{ perfil.nombre or 'N/A' }} {{ perfil.apellidoP or '' }} {{ perfil.apellidoM or '' }}</h6>
                         <span class="badge 
-                            {% if empleado.rol == 'boss' %}bg-danger
-                            {% elif empleado.rol == 'admin' %}bg-success
+                            {% if empleado.rol.nombre == 'boss' %}bg-danger
+                            {% elif empleado.rol.nombre == 'admin' %}bg-success
                             {% else %}bg-secondary{% endif %}">
-                            {{ empleado.rol | upper }}
+                            {{ empleado.rol.nombre | upper }}
                         </span>
                     </div>
                     
@@ -46,10 +46,10 @@
                                 <div class="text-start small">
                                     <p><strong>Username:</strong> {{ empleado.nombre_usuario }}</p>
                                     <p><strong>Teléfono:</strong> {{ empleado.telefono }}</p>
-                                    <p><strong>Email:</strong> {{ empleado.email or 'N/A' }}</p>
-                                    <p><strong>Calle:</strong> {{ empleado.calle or '' }} {{ empleado.no_exterior or '' }}</p>
-                                    <p><strong>Colonia:</strong> {{ empleado.colonia or '' }}</p>
-                                    <p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro or '' }}</p>
+                                    <p><strong>Email:</strong> {{ perfil.email or 'N/A' }}</p>
+                                    <p><strong>Calle:</strong> {{ perfil.calle or '' }} {{ perfil.no_exterior or '' }}</p>
+                                    <p><strong>Colonia:</strong> {{ perfil.colonia or '' }}</p>
+                                    <p><strong>Fecha de registro:</strong> {{ empleado.fecha_registro.strftime('%d/%m/%Y') if empleado.fecha_registro else 'N/A' }}</p>
                                     <p><strong>Estado:</strong> 
                                     <span class="badge {% if empleado.activo %}bg-success{% else %}bg-danger{% endif %}">
                                         {{ 'Activo' if empleado.activo else 'Inactivo' }}
