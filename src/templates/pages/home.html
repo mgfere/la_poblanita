@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center">
         <!-- Foto perfil -->
         <a href="{{ url_for('profile') }}" class="me-3">
-            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" class="rounded-circle" width="35" height="35">
         </a>
         <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light">
             <i class="bi bi-box-arrow-right"></i> Salir

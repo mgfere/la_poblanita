@@ -28,19 +28,19 @@
                         <div class="row g-2">
                             <div class="col-12">
                                 <input type="text" name="nombre" class="form-control form-control-sm" 
-                                       value="{{ usuario.nombre or '' }}" placeholder="Nombre(s)">
+                                       value="{{ perfil.nombre or '' }}" placeholder="Nombre(s)">
                             </div>
                             <div class="col-6">
                                 <input type="text" name="apellidoP" class="form-control form-control-sm" 
-                                       value="{{ usuario.apellidoP or '' }}" placeholder="Apellido Paterno">
+                                       value="{{ perfil.apellidoP or '' }}" placeholder="Apellido Paterno">
                             </div>
                             <div class="col-6">
                                 <input type="text" name="apellidoM" class="form-control form-control-sm" 
-                                       value="{{ usuario.apellidoM or '' }}" placeholder="Apellido Materno">
+                                       value="{{ perfil.apellidoM or '' }}" placeholder="Apellido Materno">
                             </div>
                             <div class="col-12">
                                 <input type="email" name="email" class="form-control form-control-sm" 
-                                       value="{{ usuario.email or '' }}" placeholder="Email">
+                                       value="{{ perfil.email or '' }}" placeholder="Email">
                             </div>
                             <div class="col-12">
                                 <input type="text" name="telefono" class="form-control form-control-sm" 
@@ -48,15 +48,15 @@
                             </div>
                             <div class="col-8">
                                 <input type="text" name="calle" class="form-control form-control-sm" 
-                                       value="{{ usuario.calle or '' }}" placeholder="Calle">
+                                       value="{{ perfil.calle or '' }}" placeholder="Calle">
                             </div>
                             <div class="col-4">
                                 <input type="text" name="no_exterior" class="form-control form-control-sm" 
-                                       value="{{ usuario.no_exterior or '' }}" placeholder="Número">
+                                       value="{{ perfil.no_exterior or '' }}" placeholder="Número">
                             </div>
                             <div class="col-12">
                                 <input type="text" name="colonia" class="form-control form-control-sm" 
-                                       value="{{ usuario.colonia or '' }}" placeholder="Colonia">
+                                       value="{{ perfil.colonia or '' }}" placeholder="Colonia">
                             </div>
                         </div>
 

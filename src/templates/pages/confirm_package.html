@@ -19,6 +19,13 @@
                     <h5 class="mb-0">Confirmación de paquete</h5>
                 </div>
                 <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
                     <!-- Información del paquete -->
                     <div class="row mb-4">
                         <div class="col-md-6">

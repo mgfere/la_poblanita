@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center">
         <!-- Foto perfil -->
         <a href="{{ url_for('profile') }}" class="me-3">
-            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) if usuario and usuario.foto_perfil else url_for('static', filename='images/picture_profile_default.png') }}" class="rounded-circle" width="35" height="35">
+            <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" class="rounded-circle" width="35" height="35">
         </a>
         <a href="{{ url_for('home') }}" class="btn btn-sm btn-outline-light">
             <i class="bi bi-house"></i> Inicio
@@ -22,6 +22,40 @@
 </nav>
 
 <div class="container mt-5 pt-5">
+    <!-- Buscador -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center" style="max-width: 400px;">
+            <form method="GET" action="{{ url_for('packages') }}" class="d-flex w-100">
+                <div class="input-group">
+                    <input type="text" name="busqueda" class="form-control" placeholder="Buscar paquetes..." 
+                           value="{{ busqueda or '' }}">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if busqueda %}
+                    <a href="{{ url_for('packages') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información de búsqueda -->
+    {% if busqueda %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-info-circle"></i>
+            Resultados de búsqueda para: <strong>"{{ busqueda }}"</strong>
+            <span class="badge bg-primary ms-2">{{ pagination.total }} resultado(s)</span>
+        </div>
+        <a href="{{ url_for('packages') }}" class="btn btn-sm btn-outline-info">
+            <i class="bi bi-x-circle"></i> Limpiar búsqueda
+        </a>
+    </div>
+    {% endif %}
+
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -66,9 +100,10 @@
                                     <div class="modal-body">
                                         <div class="text-start">
                                             <p><strong>Fecha:</strong> {{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            <p><strong>Sucursal:</strong> {{ paquete.sucursal }}</p>
                                             <p><strong>Productos:</strong></p>
                                             <div class="list-group">
-                                                {% for item in paquete.productos %}
+                                                {% for item in paquete.paquetes_productos %}
                                                 <div class="list-group-item">
                                                     <div class="d-flex align-items-center">
                                                         <img src="{{ url_for('product_image', producto_id=item.producto.id_producto) }}" 
@@ -89,11 +124,71 @@
                         </div>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center">No hay paquetes generados</td>
+                            <td colspan="6" class="text-center py-4">
+                                {% if busqueda %}
+                                <div class="text-muted">
+                                    <i class="bi bi-search display-4"></i>
+                                    <h5>No se encontraron paquetes</h5>
+                                    <p>No hay resultados para "{{ busqueda }}"</p>
+                                    <a href="{{ url_for('packages') }}" class="btn btn-primary">
+                                        <i class="bi bi-arrow-left"></i> Ver todos los paquetes
+                                    </a>
+                                </div>
+                                {% else %}
+                                <div class="text-muted">
+                                    <i class="bi bi-box display-4"></i>
+                                    <h5>No hay paquetes generados</h5>
+                                    <p>Los paquetes aparecerán aquí una vez que sean generados</p>
+                                </div>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Paginación para Paquetes -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <!-- Botón Anterior -->
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.prev_num, busqueda=busqueda) if pagination.has_prev else '#' }}">
+                            <i class="bi bi-chevron-left"></i>---
+                        </a>
+                    </li>
+
+                    <!-- Números de página -->
+                    {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('packages', pagina=page_num, busqueda=busqueda) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Botón Siguiente -->
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.next_num, busqueda=busqueda) if pagination.has_next else '#' }}">
+                            ---<i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            <!-- Información de paginación -->
+            <div class="text-center text-muted small mt-2">
+                Mostrando {{ paquetes|length }} de {{ pagination.total }} paquetes
+                (Página {{ pagination.page }} de {{ pagination.pages }})
+                {% if busqueda %}
+                <span class="badge bg-info ms-2">Búsqueda: "{{ busqueda }}"</span>
+                {% endif %}
             </div>
         </div>
     </div>
