@@ -1,3 +1,4 @@
+# Archivo para crear la base de datos
 from database.models import Base
 from database import engine
 
