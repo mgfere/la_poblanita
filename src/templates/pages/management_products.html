@@ -36,10 +36,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <!-- Buscador -->
         <div class="d-flex align-items-center" style="max-width: 400px;">
-            <form method="GET" action="{{ url_for('products') }}" class="d-flex w-100">
+            <form method="GET" action="{{ url_for('products') }}" class="d-flex w-100" id="searchForm">
                 <div class="input-group">
                     <input type="text" name="busqueda" class="form-control" placeholder="Buscar productos..." 
-                           value="{{ busqueda or '' }}">
+                           value="{{ busqueda or '' }}" id="searchInput" autofocus>
                     <button class="btn btn-outline-primary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
@@ -89,14 +89,15 @@
         <div class="card-body">
             <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <table class="table table-striped">
-                    <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                    <thead>
                         <tr>
                             <th width="150">ID Producto</th>
                             <th>Nombre</th>
-                            <th width="100">Stock</th>
-                            <th width="100">Imagen</th>
-                            <th width="100">Seleccionar</th>
-                            <th width="160">Acciones</th>
+                            <th>Código Barras</th>
+                            <th>Stock</th>
+                            <th>Imagen</th>
+                            <th>Seleccionar</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,6 +105,13 @@
                         <tr data-producto-id="{{ producto.id_producto }}">
                             <td>P-{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
                             <td>{{ producto.nombre }}</td>
+                            <td>
+                                {% if producto.codigo_barras %}
+                                <span class="badge bg-dark">{{ producto.codigo_barras }}</span>
+                                {% else %}
+                                <span class="text-muted">Sin código</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <span class="badge bg-secondary">{{ producto.cantidad }}</span>
                                 <div class="progress mt-1" style="height: 5px;">
@@ -135,7 +143,8 @@
                                         data-bs-target="#modalEditar" 
                                         data-id="{{ producto.id_producto }}"
                                         data-nombre="{{ producto.nombre }}"
-                                        data-cantidad="{{ producto.cantidad }}">
+                                        data-cantidad="{{ producto.cantidad }}"
+                                        data-codigo-barras="{{ producto.codigo_barras or '' }}">
                                     Editar
                                 </button>
                                 <form method="POST" action="{{ url_for('delete_product', id=producto.id_producto) }}" 
@@ -146,7 +155,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="7" class="text-center py-4">
                                 {% if busqueda %}
                                 <div class="text-muted">
                                     <i class="bi bi-search display-4"></i>
@@ -228,6 +237,7 @@
                 <div class="modal-body">
                     <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required>
                     <input type="number" name="cantidad" class="form-control mb-2" placeholder="Cantidad" min="0" required>
+                    <input type="text" name="codigo_barras" class="form-control mb-2" placeholder="Código de barras" required>
                     <input type="file" name="imagen" class="form-control" accept="image/*">
                 </div>
                 <div class="modal-footer">
@@ -249,8 +259,9 @@
             </div>
             <form method="POST" id="formEditar" enctype="multipart/form-data">
                 <div class="modal-body">
-                    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required>
-                    <input type="number" name="cantidad" class="form-control mb-2" placeholder="Cantidad" min="0" required>
+                    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required id="editNombre">
+                    <input type="number" name="cantidad" class="form-control mb-2" placeholder="Cantidad" min="0" required id="editCantidad">
+                    <input type="text" name="codigo_barras" class="form-control mb-2" placeholder="Código de barras" required id="editCodigoBarras">
                     <input type="file" name="imagen" class="form-control" accept="image/*">
                 </div>
                 <div class="modal-footer">
@@ -269,11 +280,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
     const cantidadInputs = document.querySelectorAll('.cantidad-input');
     const btnGenerar = document.getElementById('btnGenerarPaquete');
     const contador = document.getElementById('contador-seleccion');
     const formPaquete = document.getElementById('formPaquete');
     const productosData = document.getElementById('productosData');
+
+    // Enfocar automáticamente el campo de búsqueda
+    searchInput.focus();
 
     // Modal editar
     const modalEditar = document.getElementById('modalEditar');
@@ -281,8 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = event.relatedTarget;
         const form = document.getElementById('formEditar');
         form.action = `/products/edit/${button.dataset.id}`;
-        form.querySelector('input[name="nombre"]').value = button.dataset.nombre;
-        form.querySelector('input[name="cantidad"]').value = button.dataset.cantidad;
+        document.getElementById('editNombre').value = button.dataset.nombre;
+        document.getElementById('editCantidad').value = button.dataset.cantidad;
+        document.getElementById('editCodigoBarras').value = button.dataset.codigoBarras;
     });
 
     // Control de selección
