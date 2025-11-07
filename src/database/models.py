@@ -106,13 +106,15 @@ class Productos(Base):
     id_producto = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
     cantidad = Column(Integer, nullable=False)
+    codigo_barras = Column(String(100), unique=True, nullable=False)  # Cambiado a nullable=False
     imagen = Column(LargeBinary(length=16777215), nullable=True)
 
     paquetes_productos = relationship("Paquetes_Productos", back_populates="producto")
 
-    def __init__(self, nombre, cantidad):
+    def __init__(self, nombre, cantidad, codigo_barras):  # Eliminado valor por defecto
         self.nombre = nombre
         self.cantidad = cantidad
+        self.codigo_barras = codigo_barras
 
     def __repr__(self):
         return f'<Producto {self.nombre}>'

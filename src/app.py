@@ -78,10 +78,11 @@ def paginate(query, page, per_page):
 
     return Pagination(items, page, per_page, total)
 
+
 # ===== FUNCIONES DE BÚSQUEDA =====
 def buscar_empleados(termino):
     """
-    Buscar empleados por nombre, apellidos, usuario, email o teléfono
+    Buscador de empleados por nombre, apellidos, usuario, email o teléfono
     """
     return db_session.query(Empleados).join(Perfiles_Empleados).filter(
         (Empleados.nombre_usuario.ilike(f'%{termino}%')) |
@@ -94,17 +95,24 @@ def buscar_empleados(termino):
 
 def buscar_productos(termino):
     """
-    Buscar productos por nombre
+    Buscador de productos por nombre o código de barras exacto
     """
-    return db_session.query(Productos).filter(
-        Productos.nombre.ilike(f'%{termino}%')
-    )
+    producto_por_codigo = db_session.query(Productos).filter(
+        Productos.codigo_barras == termino
+    ).first()
+    
+    if producto_por_codigo:
+        return db_session.query(Productos).filter(Productos.codigo_barras == termino)
+    else:
+        return db_session.query(Productos).filter(
+            Productos.nombre.ilike(f'%{termino}%')
+        )
 
 def buscar_paquetes(termino):
     """
-    Buscar paquetes por ID, sucursal o productos contenidos
+    Buscador de paquetes por ID, sucursal o productos contenidos
     """
-    # Buscar por ID de paquete
+    # Buscador por ID de paquete
     if termino.isdigit():
         paquete_id = int(termino)
         return db_session.query(Paquetes).filter(
@@ -112,7 +120,7 @@ def buscar_paquetes(termino):
             (Paquetes.sucursal.ilike(f'%{termino}%'))
         ).filter(Paquetes.paquetes_productos.any())
     
-    # Buscar por sucursal o productos
+    # Buscador por sucursal o productos
     return db_session.query(Paquetes).filter(
         (Paquetes.sucursal.ilike(f'%{termino}%')) |
         (Paquetes.paquetes_productos.any(
@@ -367,10 +375,9 @@ def home():
 @app.route('/products')
 @requiere_login
 def products():
-    # Obtener parámetros de paginación y búsqueda
     pagina = request.args.get('pagina', 1, type=int)
     busqueda = request.args.get('busqueda', '').strip()
-    por_pagina = 10  # 10 productos por página
+    por_pagina = 10
     
     # Consulta con búsqueda y paginación
     if busqueda:
@@ -392,9 +399,26 @@ def products():
 @requiere_rol('user', 'admin', 'boss')
 def add_product():
     try:
+        codigo_barras = request.form.get('codigo_barras')
+        if not codigo_barras:
+            pagina = request.args.get('pagina', 1, type=int)
+            busqueda = request.args.get('busqueda', '').strip()
+            if busqueda:
+                productos_query = buscar_productos(busqueda)
+            else:
+                productos_query = db_session.query(Productos)
+            productos_paginados = paginate(productos_query, pagina, 10)
+            return render_template('pages/management_products.html', 
+                                productos=productos_paginados.items,
+                                pagination=productos_paginados,
+                                busqueda=busqueda,
+                                usuario=get_usuario_actual(),
+                                perfil=get_perfil_usuario_actual(),
+                                error="El código de barras es obligatorio")
         producto = Productos(
             nombre=request.form['nombre'], 
-            cantidad=int(request.form['cantidad'])
+            cantidad=int(request.form['cantidad']),
+            codigo_barras=codigo_barras  # Ahora es obligatorio
         )
         imagen_data = manejar_imagen(request.files.get('imagen'))
         if imagen_data: 
@@ -403,6 +427,7 @@ def add_product():
         db_session.commit()
     except Exception as e: 
         print(f"Error agregando producto: {e}")
+        db_session.rollback()
     return redirect(url_for('products'))
 
 @app.route('/products/edit/<int:id>', methods=['POST'])
@@ -412,14 +437,37 @@ def edit_product(id):
     producto = db_session.query(Productos).filter_by(id_producto=id).first()
     if producto:
         try:
+            # Validar que el código de barras esté presente
+            codigo_barras = request.form.get('codigo_barras')
+            if not codigo_barras:
+                # Manejar el error
+                pagina = request.args.get('pagina', 1, type=int)
+                busqueda = request.args.get('busqueda', '').strip()
+                
+                if busqueda:
+                    productos_query = buscar_productos(busqueda)
+                else:
+                    productos_query = db_session.query(Productos)
+                    
+                productos_paginados = paginate(productos_query, pagina, 10)
+                return render_template('pages/management_products.html', 
+                                    productos=productos_paginados.items,
+                                    pagination=productos_paginados,
+                                    busqueda=busqueda,
+                                    usuario=get_usuario_actual(),
+                                    perfil=get_perfil_usuario_actual(),
+                                    error="El código de barras es obligatorio")
+            
             producto.nombre = request.form['nombre']
             producto.cantidad = int(request.form['cantidad'])
+            producto.codigo_barras = codigo_barras  # Ahora es obligatorio
             imagen_data = manejar_imagen(request.files.get('imagen'))
             if imagen_data: 
                 producto.imagen = imagen_data
             db_session.commit()
         except Exception as e: 
             print(f"Error editando producto: {e}")
+            db_session.rollback()
     return redirect(url_for('products'))
 
 @app.route('/products/delete/<int:id>', methods=['POST'])
