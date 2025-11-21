@@ -5,7 +5,6 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'carniceria.molino.la.poblanita@gmail.com'
     MAIL_PASSWORD = 'hrqelvfxvcdjvhkw'
-    MAIL_DEFAULT_SENDER = 'carniceria.molino.la.poblanita@gmail.com'
 
 class DesarrolloConfig():
     DEBUG = False
