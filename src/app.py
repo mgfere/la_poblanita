@@ -67,7 +67,6 @@ def paginate(query, page, per_page):
                 min(current_page + right_current + 1, right_range[0] if right_range else total_pages + 1)
             )
             
-            # Generar páginas
             last = 0
             for page_num in left_range:
                 yield page_num
@@ -531,7 +530,7 @@ def add_product():
         producto = Productos(
             nombre=request.form['nombre'], 
             cantidad=int(request.form['cantidad']),
-            codigo_barras=codigo_barras  # Ahora es obligatorio
+            codigo_barras=codigo_barras
         )
         imagen_data = manejar_imagen(request.files.get('imagen'))
         if imagen_data: 
@@ -550,7 +549,6 @@ def edit_product(id):
     producto = db_session.query(Productos).filter_by(id_producto=id).first()
     if producto:
         try:
-            # Validar que el código de barras esté presente
             codigo_barras = request.form.get('codigo_barras')
             if not codigo_barras:
                 # Manejar el error
@@ -573,7 +571,7 @@ def edit_product(id):
             
             producto.nombre = request.form['nombre']
             producto.cantidad = int(request.form['cantidad'])
-            producto.codigo_barras = codigo_barras  # Ahora es obligatorio
+            producto.codigo_barras = codigo_barras
             imagen_data = manejar_imagen(request.files.get('imagen'))
             if imagen_data: 
                 producto.imagen = imagen_data
@@ -832,7 +830,7 @@ def delete_package(id):
 def employees():
     pagina = request.args.get('pagina', 1, type=int)
     busqueda = request.args.get('busqueda', '').strip()
-    por_pagina = 10  # 10 empleados por página
+    por_pagina = 10
     
     # Consulta con búsqueda y paginación
     if busqueda:
@@ -916,7 +914,6 @@ def edit_employee(id):
     
     if empleado and puede_editar_empleado(usuario_actual, id):
         try:
-            # Actualiza los datos
             empleado.telefono = request.form.get('telefono', empleado.telefono)
             
             if 'activo' in request.form:
