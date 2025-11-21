@@ -11,6 +11,7 @@ from flask_mail import Mail, Message
 from config import Config
 import json
 import math
+import os
 
 app = Flask(__name__)
 app.secret_key = 'LA POBLANITA'
@@ -371,8 +372,6 @@ def logout():
     return redirect(url_for('login'))
 
 # ===== RUTAS DE RECUPERACIÓN DE CONTRASEÑA =====
-import os
-
 @app.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
     error = None
