@@ -380,12 +380,13 @@ def reset_password_request():
         
         print(f"Buscando email: {email}")
         
-        perfil = db_session.query(Perfiles_Empleados).filter(
-            Perfiles_Empleados.email.ilike(email)
+        empleado = db_session.query(Empleados).join(Perfiles_Empleados).filter(
+            Perfiles_Empleados.email.ilike(email),
+            Empleados.activo == True
         ).first()
         
-        if perfil and perfil.empleado and perfil.empleado.activo:
-            print(f"Usuario encontrado: {perfil.empleado.nombre_usuario}")
+        if empleado:
+            print(f"Usuario encontrado: {empleado.nombre_usuario}")
             
             token = serializador.dumps(email, salt='reinicio-contraseña')
             
@@ -428,19 +429,23 @@ def reset_password(token):
     
     try:
         email = serializador.loads(token, salt='reinicio-contraseña', max_age=3600)
-    except Exception:
+        print(f"Email recuperado del token: {email}")
+    except Exception as e:
         error = "El enlace es inválido o ha expirado."
+        print(f"Error cargando token: {e}")
         return render_template('auth/reset_password.html', error=error)
     
-    perfil = db_session.query(Perfiles_Empleados).filter(
-        Perfiles_Empleados.email.ilike(email)
+    empleado = db_session.query(Empleados).join(Perfiles_Empleados).filter(
+        Perfiles_Empleados.email.ilike(email),
+        Empleados.activo == True
     ).first()
     
-    if not perfil or not perfil.empleado or not perfil.empleado.activo:
-        error = "Usuario no encontrado."
+    if not empleado:
+        error = "Usuario no encontrado o inactivo."
+        print(f"Empleado no encontrado para email: {email}")
         return render_template('auth/reset_password.html', error=error)
     
-    empleado = perfil.empleado
+    print(f"Empleado encontrado: {empleado.nombre_usuario}")
     
     if request.method == 'POST':
         nueva_contraseña = request.form['nueva_contraseña']
@@ -448,9 +453,15 @@ def reset_password(token):
         if len(nueva_contraseña) < 6:
             error = "La nueva contraseña debe tener al menos 6 caracteres."
         else:
-            empleado.contraseña_hash = generate_password_hash(nueva_contraseña)
-            db_session.commit()
-            mensaje = "Contraseña actualizada correctamente."
+            try:
+                empleado.contraseña_hash = generate_password_hash(nueva_contraseña)
+                db_session.commit()
+                mensaje = "Contraseña actualizada correctamente."
+                print(f"Contraseña actualizada para usuario: {empleado.nombre_usuario}")
+            except Exception as e:
+                error = "Error al actualizar la contraseña. Intente nuevamente."
+                print(f"Error actualizando contraseña: {e}")
+                db_session.rollback()
     
     return render_template('auth/reset_password.html', error=error, mensaje=mensaje)
 
