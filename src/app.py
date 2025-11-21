@@ -17,8 +17,6 @@ app = Flask(__name__)
 app.secret_key = 'LA POBLANITA'
 
 app.config.from_object(Config)
-app.config['MAIL_DEBUG'] = True
-app.config['MAIL_SUPPRESS_SEND'] = False
 
 correo = Mail(app)
 serializador = URLSafeTimedSerializer(Config.SECRET_KEY)
