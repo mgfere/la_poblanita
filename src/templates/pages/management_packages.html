@@ -10,7 +10,6 @@
         Paquetes
     </a>
     <div class="d-flex align-items-center">
-        <!-- Foto perfil -->
         <a href="{{ url_for('profile') }}" class="me-3">
             <img src="{{ url_for('profile_picture', usuario_id=usuario.id_empleado) }}" class="rounded-circle" width="35" height="35">
         </a>
@@ -22,36 +21,63 @@
 </nav>
 
 <div class="container mt-5 pt-5">
-    <!-- Buscador -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center" style="max-width: 400px;">
-            <form method="GET" action="{{ url_for('packages') }}" class="d-flex w-100">
-                <div class="input-group">
-                    <input type="text" name="busqueda" class="form-control" placeholder="Buscar paquetes..." 
-                           value="{{ busqueda or '' }}">
-                    <button class="btn btn-outline-primary" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
-                    {% if busqueda %}
-                    <a href="{{ url_for('packages') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x"></i>
-                    </a>
-                    {% endif %}
+    <!-- Filtros por fecha y sucursal -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><i class="bi bi-funnel"></i> Filtros</h6>
+            <form method="GET" action="{{ url_for('packages') }}" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small">Fecha Desde</label>
+                        <input type="date" name="filtro_fecha_desde" class="form-control form-control-sm" 
+                               value="{{ filtro_fecha_desde or '' }}"
+                               onchange="document.getElementById('filterForm').submit()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Fecha Hasta</label>
+                        <input type="date" name="filtro_fecha_hasta" class="form-control form-control-sm" 
+                               value="{{ filtro_fecha_hasta or '' }}"
+                               onchange="document.getElementById('filterForm').submit()">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Sucursal</label>
+                        <select name="filtro_sucursal" class="form-select form-select-sm" 
+                                onchange="document.getElementById('filterForm').submit()">
+                            <option value="">Todas las sucursales</option>
+                            {% for sucursal in sucursales %}
+                            <option value="{{ sucursal }}" {% if filtro_sucursal == sucursal %}selected{% endif %}>
+                                {{ sucursal }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        {% if filtro_fecha_desde or filtro_fecha_hasta or filtro_sucursal %}
+                        <a href="{{ url_for('packages') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle"></i> Limpiar Filtros
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Información de búsqueda -->
-    {% if busqueda %}
+    <!-- Información de filtros activos -->
+    {% if filtro_fecha_desde or filtro_fecha_hasta or filtro_sucursal %}
     <div class="alert alert-info d-flex justify-content-between align-items-center">
         <div>
-            <i class="bi bi-info-circle"></i>
-            Resultados de búsqueda para: <strong>"{{ busqueda }}"</strong>
-            <span class="badge bg-primary ms-2">{{ pagination.total }} resultado(s)</span>
+            <i class="bi bi-funnel"></i>
+            <strong>Filtros activos:</strong>
+            {% if filtro_fecha_desde %}<span class="badge bg-secondary ms-1">Desde: {{ filtro_fecha_desde }}</span>{% endif %}
+            {% if filtro_fecha_hasta %}<span class="badge bg-secondary ms-1">Hasta: {{ filtro_fecha_hasta }}</span>{% endif %}
+            {% if filtro_sucursal %}<span class="badge bg-secondary ms-1">Sucursal: {{ filtro_sucursal }}</span>{% endif %}
+            <span class="badge bg-dark ms-2">{{ pagination.total }} resultado(s)</span>
         </div>
         <a href="{{ url_for('packages') }}" class="btn btn-sm btn-outline-info">
-            <i class="bi bi-x-circle"></i> Limpiar búsqueda
+            <i class="bi bi-x-circle"></i> Limpiar todos
         </a>
     </div>
     {% endif %}
@@ -59,7 +85,7 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th>ID Paquete</th>
@@ -75,21 +101,19 @@
                             <td>{{ paquete.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
                             <td>{{ paquete.sucursal }}</td>
                             <td>
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
-                                        data-bs-target="#modalVer{{ paquete.id_paquete }}">
-                                    <i class="bi bi-eye"></i> Ver
-                                </button>
-                                <form method="POST" action="{{ url_for('delete_package', id=paquete.id_paquete) }}" 
-                                    class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm" 
-                                            onclick="return confirm('ADVERTENCIA:\n¿Desea eliminar el paquete PQ-{{ paquete.id_paquete }}?\n\nATENCIÓN:\nLos productos de este paquete ya fueron descontados del inventario y no se regresarán al stock.');">
+                                <div class="d-flex flex-column gap-1">
+                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                            data-bs-target="#modalVer{{ paquete.id_paquete }}">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            onclick="if(confirm('ADVERTENCIA:\n¿Desea eliminar el paquete PQ-{{ paquete.id_paquete }}?\n\nATENCIÓN:\nLos productos de este paquete ya fueron descontados del inventario y no se regresarán al stock.')) { document.getElementById('deleteForm{{ paquete.id_paquete }}').submit(); }">
                                         <i class="bi bi-trash"></i> Borrar
                                     </button>
-                                </form>
+                                </div>
                             </td>
                         </tr>
 
-                        <!-- Modal Ver -->
                         <div class="modal fade" id="modalVer{{ paquete.id_paquete }}">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
@@ -125,11 +149,11 @@
                         {% else %}
                         <tr>
                             <td colspan="6" class="text-center py-4">
-                                {% if busqueda %}
+                                {% if filtro_fecha_desde or filtro_fecha_hasta or filtro_sucursal %}
                                 <div class="text-muted">
                                     <i class="bi bi-search display-4"></i>
                                     <h5>No se encontraron paquetes</h5>
-                                    <p>No hay resultados para "{{ busqueda }}"</p>
+                                    <p>No hay resultados con los filtros aplicados</p>
                                     <a href="{{ url_for('packages') }}" class="btn btn-primary">
                                         <i class="bi bi-arrow-left"></i> Ver todos los paquetes
                                     </a>
@@ -148,22 +172,25 @@
                 </table>
             </div>
 
-            <!-- Paginación para Paquetes -->
+            {% for paquete in paquetes %}
+            <form method="POST" action="{{ url_for('delete_package', id=paquete.id_paquete) }}" 
+                  id="deleteForm{{ paquete.id_paquete }}" style="display: none;">
+            </form>
+            {% endfor %}
+
             {% if pagination.pages > 1 %}
             <nav aria-label="Page navigation" class="mt-3">
                 <ul class="pagination justify-content-center">
-                    <!-- Botón Anterior -->
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.prev_num, busqueda=busqueda) if pagination.has_prev else '#' }}">
+                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.prev_num, filtro_fecha_desde=filtro_fecha_desde, filtro_fecha_hasta=filtro_fecha_hasta, filtro_sucursal=filtro_sucursal) if pagination.has_prev else '#' }}">
                             <i class="bi bi-chevron-left"></i>---
                         </a>
                     </li>
 
-                    <!-- Números de página -->
                     {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
                         {% if page_num %}
                             <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('packages', pagina=page_num, busqueda=busqueda) }}">{{ page_num }}</a>
+                                <a class="page-link" href="{{ url_for('packages', pagina=page_num, filtro_fecha_desde=filtro_fecha_desde, filtro_fecha_hasta=filtro_fecha_hasta, filtro_sucursal=filtro_sucursal) }}">{{ page_num }}</a>
                             </li>
                         {% else %}
                             <li class="page-item disabled">
@@ -172,9 +199,8 @@
                         {% endif %}
                     {% endfor %}
 
-                    <!-- Botón Siguiente -->
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.next_num, busqueda=busqueda) if pagination.has_next else '#' }}">
+                        <a class="page-link" href="{{ url_for('packages', pagina=pagination.next_num, filtro_fecha_desde=filtro_fecha_desde, filtro_fecha_hasta=filtro_fecha_hasta, filtro_sucursal=filtro_sucursal) if pagination.has_next else '#' }}">
                             ---<i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -182,15 +208,27 @@
             </nav>
             {% endif %}
 
-            <!-- Información de paginación -->
             <div class="text-center text-muted small mt-2">
                 Mostrando {{ paquetes|length }} de {{ pagination.total }} paquetes
                 (Página {{ pagination.page }} de {{ pagination.pages }})
-                {% if busqueda %}
-                <span class="badge bg-info ms-2">Búsqueda: "{{ busqueda }}"</span>
+                {% if filtro_fecha_desde or filtro_fecha_hasta or filtro_sucursal %}
+                <span class="badge bg-info ms-2">Filtros aplicados</span>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = document.querySelectorAll('#filterForm input, #filterForm select');
+    filterInputs.forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('filterForm').submit();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

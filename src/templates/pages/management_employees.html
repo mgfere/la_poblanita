@@ -22,11 +22,9 @@
 
 <div class="container mt-5 pt-5">
     {% if usuario.rol.nombre in ['admin', 'boss'] %}
-    <!-- Contenido para admin y boss -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <!-- Buscador -->
         <div class="d-flex align-items-center" style="max-width: 400px;">
-            <form method="GET" action="{{ url_for('employees') }}" class="d-flex w-100">
+            <form method="GET" action="{{ url_for('employees') }}" class="d-flex w-100" id="searchForm">
                 <div class="input-group">
                     <input type="text" name="busqueda" class="form-control" placeholder="Buscar empleados..." 
                            value="{{ busqueda or '' }}">
@@ -47,7 +45,6 @@
         </button>
     </div>
 
-    <!-- Información de búsqueda -->
     {% if busqueda %}
     <div class="alert alert-info d-flex justify-content-between align-items-center">
         <div>
@@ -61,7 +58,6 @@
     </div>
     {% endif %}
 
-    <!-- Tabla de Empleados -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -102,73 +98,25 @@
                                 </span>
                             </td>
                             <td>
-                                <!-- Botón Ver Perfil -->
-                                <a href="{{ url_for('profile_other', id=emp.id_empleado) }}" class="btn btn-secondary btn-sm">
-                                    <i class="bi bi-eye"></i> Perfil
-                                </a>
-                                {% if emp.id_empleado != usuario.id_empleado %}
-                                    {% if (usuario.rol.nombre == 'boss') or (usuario.rol.nombre == 'admin' and emp.rol.nombre == 'user') %}
-                                    <!-- Botón Editar -->
-                                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
-                                            data-bs-target="#modalEditar{{ emp.id_empleado }}">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </button>
-                                    <!-- Botón Eliminar -->
-                                    <form method="POST" action="{{ url_for('delete_employee', id=emp.id_empleado) }}" 
-                                        class="d-inline">
-                                        <button type="submit" class="btn btn-danger btn-sm"
-                                                onclick="return confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.perfil.nombre }} {{ emp.perfil.apellidoP }} {{ emp.perfil.apellidoM }}?')">
+                                <div class="d-flex flex-column gap-1">
+                                    <a href="{{ url_for('profile_other', id=emp.id_empleado) }}" class="btn btn-secondary btn-sm">
+                                        <i class="bi bi-eye"></i> Perfil
+                                    </a>
+                                    {% if emp.id_empleado != usuario.id_empleado %}
+                                        {% if (usuario.rol.nombre == 'boss') or (usuario.rol.nombre == 'admin' and emp.rol.nombre == 'user') %}
+                                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" 
+                                                data-bs-target="#modalEditar{{ emp.id_empleado }}">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm"
+                                                onclick="if(confirm('¿Estás seguro de que quieres eliminar el empleado {{ emp.perfil.nombre }} {{ emp.perfil.apellidoP }} {{ emp.perfil.apellidoM }}?')) { document.getElementById('deleteForm{{ emp.id_empleado }}').submit(); }">
                                             <i class="bi bi-trash"></i> Eliminar
                                         </button>
-                                    </form>
+                                        {% endif %}
                                     {% endif %}
-                                {% endif %}
+                                </div>
                             </td>
                         </tr>
-
-                        <!-- Modal Editar Empleado -->
-                        <div class="modal fade" id="modalEditar{{ emp.id_empleado }}">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Editar Empleado</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <form method="POST" action="{{ url_for('edit_employee', id=emp.id_empleado) }}" enctype="multipart/form-data">
-                                        <div class="modal-body">
-                                            <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" value="{{ emp.perfil.nombre or '' }}">
-                                            <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno" value="{{ emp.perfil.apellidoP or '' }}">
-                                            <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno" value="{{ emp.perfil.apellidoM or '' }}">
-                                            <input type="email" name="email" class="form-control mb-2" placeholder="Email" value="{{ emp.perfil.email or '' }}">
-                                            <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" value="{{ emp.telefono }}" required>
-                                            <input type="text" name="calle" class="form-control mb-2" placeholder="Calle" value="{{ emp.perfil.calle or '' }}">
-                                            <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número" value="{{ emp.perfil.no_exterior or '' }}">
-                                            <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia" value="{{ emp.perfil.colonia or '' }}">
-                                            <input type="file" name="foto_perfil" class="form-control" accept="image/*">
-                                            
-                                            {% if usuario.rol.nombre == 'boss' %}
-                                            <select name="id_rol" class="form-select mt-2">
-                                                {% for rol in roles %}
-                                                <option value="{{ rol.id_rol }}" {% if emp.rol.id_rol == rol.id_rol %}selected{% endif %}>
-                                                    {{ rol.nombre | capitalize }}
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                            {% endif %}
-                                            
-                                            <select name="activo" class="form-select mt-2">
-                                                <option value="1" {% if emp.activo %}selected{% endif %}>Activo</option>
-                                                <option value="0" {% if not emp.activo %}selected{% endif %}>Inactivo</option>
-                                            </select>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="submit" class="btn btn-primary">Actualizar</button>
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         {% else %}
                         <tr>
                             <td colspan="8" class="text-center py-4">
@@ -195,18 +143,21 @@
                 </table>
             </div>
 
-            <!-- Paginación para Empleados -->
+            {% for emp in empleados %}
+            <form method="POST" action="{{ url_for('delete_employee', id=emp.id_empleado) }}" 
+                  id="deleteForm{{ emp.id_empleado }}" style="display: none;">
+            </form>
+            {% endfor %}
+
             {% if pagination.pages > 1 %}
             <nav aria-label="Page navigation" class="mt-3">
                 <ul class="pagination justify-content-center">
-                    <!-- Botón Anterior -->
                     <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
                         <a class="page-link" href="{{ url_for('employees', pagina=pagination.prev_num, busqueda=busqueda) if pagination.has_prev else '#' }}">
                             <i class="bi bi-chevron-left"></i>---
                         </a>
                     </li>
 
-                    <!-- Números de página -->
                     {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
                         {% if page_num %}
                             <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
@@ -219,7 +170,6 @@
                         {% endif %}
                     {% endfor %}
 
-                    <!-- Botón Siguiente -->
                     <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
                         <a class="page-link" href="{{ url_for('employees', pagina=pagination.next_num, busqueda=busqueda) if pagination.has_next else '#' }}">
                             ---<i class="bi bi-chevron-right"></i>
@@ -229,7 +179,6 @@
             </nav>
             {% endif %}
 
-            <!-- Información de paginación -->
             <div class="text-center text-muted small mt-2">
                 Mostrando {{ empleados|length }} de {{ pagination.total }} empleados
                 (Página {{ pagination.page }} de {{ pagination.pages }})
@@ -240,7 +189,7 @@
         </div>
     </div>
 
-    <!-- Modal Agregar Empleado -->
+    <!-- Modal Agregar Empleado - FUERA de cualquier otro formulario -->
     <div class="modal fade" id="modalAgregar">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -284,8 +233,53 @@
         </div>
     </div>
 
+    <!-- Modales de edición - FUERA de cualquier otro formulario -->
+    {% for emp in empleados %}
+    <div class="modal fade" id="modalEditar{{ emp.id_empleado }}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('edit_employee', id=emp.id_empleado) }}" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" value="{{ emp.perfil.nombre or '' }}">
+                        <input type="text" name="apellidoP" class="form-control mb-2" placeholder="Apellido Paterno" value="{{ emp.perfil.apellidoP or '' }}">
+                        <input type="text" name="apellidoM" class="form-control mb-2" placeholder="Apellido Materno" value="{{ emp.perfil.apellidoM or '' }}">
+                        <input type="email" name="email" class="form-control mb-2" placeholder="Email" value="{{ emp.perfil.email or '' }}">
+                        <input type="text" name="telefono" class="form-control mb-2" placeholder="Teléfono" value="{{ emp.telefono }}" required>
+                        <input type="text" name="calle" class="form-control mb-2" placeholder="Calle" value="{{ emp.perfil.calle or '' }}">
+                        <input type="text" name="no_exterior" class="form-control mb-2" placeholder="Número" value="{{ emp.perfil.no_exterior or '' }}">
+                        <input type="text" name="colonia" class="form-control mb-2" placeholder="Colonia" value="{{ emp.perfil.colonia or '' }}">
+                        <input type="file" name="foto_perfil" class="form-control" accept="image/*">
+                        
+                        {% if usuario.rol.nombre == 'boss' %}
+                        <select name="id_rol" class="form-select mt-2">
+                            {% for rol in roles %}
+                            <option value="{{ rol.id_rol }}" {% if emp.rol.id_rol == rol.id_rol %}selected{% endif %}>
+                                {{ rol.nombre | capitalize }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                        
+                        <select name="activo" class="form-select mt-2">
+                            <option value="1" {% if emp.activo %}selected{% endif %}>Activo</option>
+                            <option value="0" {% if not emp.activo %}selected{% endif %}>Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
     {% else %}
-    <!-- Mensaje de acceso denegado para usuarios normales -->
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
