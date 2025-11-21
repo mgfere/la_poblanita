@@ -1,15 +1,27 @@
+import datetime
 from flask import Flask, redirect, render_template, request, session, url_for, Response
 from functools import wraps
 from io import BytesIO
 from PIL import Image
 from database import db_session
 from database.models import Empleados, Productos, Paquetes, Paquetes_Productos, Perfiles_Empleados, Roles
+from werkzeug.security import generate_password_hash
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
+from config import Config
 import json
 import math
 
 
 app = Flask(__name__)
 app.secret_key = 'LA POBLANITA'
+
+app.config.from_object(Config)
+app.config['MAIL_DEBUG'] = True
+app.config['MAIL_SUPPRESS_SEND'] = False
+
+correo = Mail(app)
+serializador = URLSafeTimedSerializer(Config.SECRET_KEY)
 
 # ===== FUNCIÓN DE PAGINACIÓN MANUAL =====
 def paginate(query, page, per_page):
@@ -363,6 +375,90 @@ def logout():
     session.pop('usuario_id', None)
     return redirect(url_for('login'))
 
+# ===== RUTAS DE RECUPERACIÓN DE CONTRASEÑA =====
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    error = None
+    mensaje = None
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+        
+        print(f"Buscando email: {email}")
+        
+        # Busca el empleado por email en el perfil
+        perfil = db_session.query(Perfiles_Empleados).filter(
+            Perfiles_Empleados.email.ilike(email)
+        ).first()
+        
+        if perfil and perfil.empleado and perfil.empleado.activo:
+            print(f"Usuario encontrado: {perfil.empleado.nombre_usuario}")
+            
+            token = serializador.dumps(perfil.empleado.id_empleado, salt='reinicio-contraseña')
+            url_reinicio = url_for('reset_password', token=token, _external=True)
+            
+            print(f"Intentando enviar correo a: {email}")
+            print(f"URL de reinicio: {url_reinicio}")
+            
+            try:
+                msg = Message(
+                    subject="Recuperación de Contraseña - La Poblanita",
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[email]
+                )
+                msg.body = f"""Para restablecer tu contraseña, visita el siguiente enlace:
+
+{url_reinicio}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, puedes ignorar este mensaje."""
+                
+                with app.app_context():
+                    correo.send(msg)
+                
+                print(f"Correo enviado exitosamente a: {email}")
+                mensaje = "Se ha enviado un enlace de recuperación a tu correo electrónico"
+                
+            except Exception as e:
+                error = "Error al enviar el correo. Por favor, contacta al administrador."
+                print(f"Error enviando correo: {str(e)}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"Email no encontrado o usuario inactivo: {email}")
+            mensaje = "Si el email existe en nuestro sistema, recibirás un enlace de recuperación"
+    
+    return render_template('auth/reset_password_request.html', error=error, mensaje=mensaje)
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    error = None
+    mensaje = None
+    
+    try:
+        id_empleado = serializador.loads(token, salt='reinicio-contraseña', max_age=3600)
+    except Exception:
+        error = "El enlace es inválido o ha expirado."
+        return render_template('auth/reset_password.html', error=error)
+    
+    empleado = db_session.query(Empleados).filter_by(id_empleado=id_empleado).first()
+    if not empleado or not empleado.activo:
+        error = "Usuario no encontrado."
+        return render_template('auth/reset_password.html', error=error)
+    
+    if request.method == 'POST':
+        nueva_contraseña = request.form['nueva_contraseña']
+        
+        if len(nueva_contraseña) < 6:
+            error = "La nueva contraseña debe tener al menos 6 caracteres."
+        else:
+            # Actualizar contraseña
+            empleado.contraseña_hash = generate_password_hash(nueva_contraseña)
+            db_session.commit()
+            mensaje = "Contraseña actualizada correctamente."
+    
+    return render_template('auth/reset_password.html', error=error, mensaje=mensaje)
+
 # ===== RUTAS PRINCIPALES =====
 @app.route('/home')
 @requiere_login
@@ -377,20 +473,39 @@ def home():
 def products():
     pagina = request.args.get('pagina', 1, type=int)
     busqueda = request.args.get('busqueda', '').strip()
-    por_pagina = 10
+    filtro_nombre = request.args.get('filtro_nombre', '').strip()
+    filtro_codigo = request.args.get('filtro_codigo', '').strip()
+    filtro_stock_min = request.args.get('filtro_stock_min', '').strip()
+    filtro_stock_max = request.args.get('filtro_stock_max', '').strip()
     
-    # Consulta con búsqueda y paginación
+    por_pagina = 10
+    productos_query = db_session.query(Productos)
     if busqueda:
         productos_query = buscar_productos(busqueda)
-    else:
-        productos_query = db_session.query(Productos)
-    
+    if filtro_nombre:
+        productos_query = productos_query.filter(Productos.nombre.ilike(f'%{filtro_nombre}%'))
+    if filtro_codigo:
+        productos_query = productos_query.filter(Productos.codigo_barras.ilike(f'%{filtro_codigo}%'))
+    if filtro_stock_min:
+        try:
+            productos_query = productos_query.filter(Productos.cantidad >= int(filtro_stock_min))
+        except ValueError:
+            pass
+    if filtro_stock_max:
+        try:
+            productos_query = productos_query.filter(Productos.cantidad <= int(filtro_stock_max))
+        except ValueError:
+            pass
     productos_paginados = paginate(productos_query, pagina, por_pagina)
     
     return render_template('pages/management_products.html', 
                          productos=productos_paginados.items,
                          pagination=productos_paginados,
                          busqueda=busqueda,
+                         filtro_nombre=filtro_nombre,
+                         filtro_codigo=filtro_codigo,
+                         filtro_stock_min=filtro_stock_min,
+                         filtro_stock_max=filtro_stock_max,
                          usuario=get_usuario_actual(),
                          perfil=get_perfil_usuario_actual())
 
@@ -515,20 +630,44 @@ def delete_product(id):
 @requiere_login
 def packages():
     pagina = request.args.get('pagina', 1, type=int)
-    busqueda = request.args.get('busqueda', '').strip()
+    filtro_fecha_desde = request.args.get('filtro_fecha_desde', '').strip()
+    filtro_fecha_hasta = request.args.get('filtro_fecha_hasta', '').strip()
+    filtro_sucursal = request.args.get('filtro_sucursal', '').strip()
+    
     por_pagina = 10
     
-    if busqueda:
-        paquetes_query = buscar_paquetes(busqueda)
-    else:
-        paquetes_query = db_session.query(Paquetes).filter(Paquetes.paquetes_productos.any())
+    paquetes_query = db_session.query(Paquetes).filter(Paquetes.paquetes_productos.any())
+    
+    if filtro_fecha_desde:
+        try:
+            fecha_desde = datetime.strptime(filtro_fecha_desde, '%Y-%m-%d')
+            paquetes_query = paquetes_query.filter(Paquetes.fecha_creacion >= fecha_desde)
+        except ValueError:
+            pass
+    
+    if filtro_fecha_hasta:
+        try:
+            fecha_hasta = datetime.strptime(filtro_fecha_hasta, '%Y-%m-%d')
+            fecha_hasta = fecha_hasta.replace(hour=23, minute=59, second=59)
+            paquetes_query = paquetes_query.filter(Paquetes.fecha_creacion <= fecha_hasta)
+        except ValueError:
+            pass
+
+    if filtro_sucursal:
+        paquetes_query = paquetes_query.filter(Paquetes.sucursal.ilike(f'%{filtro_sucursal}%'))
     
     paquetes_paginados = paginate(paquetes_query, pagina, por_pagina)
+    
+    sucursales = db_session.query(Paquetes.sucursal).distinct().all()
+    sucursales = [s[0] for s in sucursales if s[0]]
     
     return render_template('pages/management_packages.html', 
                          paquetes=paquetes_paginados.items,
                          pagination=paquetes_paginados,
-                         busqueda=busqueda,
+                         filtro_fecha_desde=filtro_fecha_desde,
+                         filtro_fecha_hasta=filtro_fecha_hasta,
+                         filtro_sucursal=filtro_sucursal,
+                         sucursales=sucursales,
                          usuario=get_usuario_actual(),
                          perfil=get_perfil_usuario_actual())
 
@@ -725,8 +864,12 @@ def add_employee():
         usuario_actual = get_usuario_actual()
         rol_solicitado_id = int(request.form.get('id_rol', 1))
         
+        rol_user = db_session.query(Roles).filter_by(nombre='user').first()
+        if not rol_user:
+            rol_user = crear_rol_user_si_no_existe()
+        
         if not puede_cambiar_rol(usuario_actual, rol_solicitado_id):
-            rol_solicitado_id = 1
+            rol_solicitado_id = rol_user.id_rol
         
         empleado = Empleados(
             nombre_usuario=request.form['nombre_usuario'],
@@ -734,14 +877,14 @@ def add_employee():
             telefono=request.form['telefono'],
             id_rol=rol_solicitado_id
         )
-        
         if 'activo' in request.form:
             empleado.activo = bool(int(request.form['activo']))
+        else:
+            empleado.activo = True
         
         db_session.add(empleado)
         db_session.flush()
         
-        # Crea el perfil del empleado
         perfil = Perfiles_Empleados(
             nombre=request.form.get('nombre', ''),
             apellidoP=request.form.get('apellidoP', ''),
@@ -752,13 +895,13 @@ def add_employee():
             no_exterior=request.form.get('no_exterior', ''),
             id_empleado=empleado.id_empleado
         )
-        
         foto_data = manejar_imagen(request.files.get('foto_perfil'))
         if foto_data: 
             perfil.foto_perfil = foto_data
-        
         db_session.add(perfil)
         db_session.commit()
+        
+        print(f"Empleado {empleado.nombre_usuario} agregado exitosamente")
         
     except Exception as e: 
         print(f"Error agregando empleado: {e}")
