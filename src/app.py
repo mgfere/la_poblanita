@@ -11,17 +11,11 @@ from flask_mail import Mail, Message
 from config import Config
 import json
 import math
-import os
-
 
 app = Flask(__name__)
 app.secret_key = 'LA POBLANITA'
 
-if 'RENDER' in os.environ:
-    app.config['SERVER_NAME'] = 'la-poblanita.onrender.com'
-
 app.config.from_object(Config)
-
 correo = Mail(app)
 serializador = URLSafeTimedSerializer(Config.SECRET_KEY)
 
@@ -393,20 +387,16 @@ def reset_password_request():
         if perfil and perfil.empleado and perfil.empleado.activo:
             print(f"Usuario encontrado: {perfil.empleado.nombre_usuario}")
             
-            token = serializador.dumps(perfil.empleado.id_empleado, salt='reinicio-contraseña')
+            token = serializador.dumps(email, salt='reinicio-contraseña')
             
-            # Modifica solo esta parte
-            if 'RENDER' in os.environ:
-                url_reinicio = f"https://la-poblanita.onrender.com/reset_password/{token}"
-            else:
-                url_reinicio = url_for('reset_password', token=token, _external=True)
+            url_reinicio = url_for('reset_password', token=token, _external=True)
             
             print(f"URL de reinicio: {url_reinicio}")
             
             try:
                 msg = Message(
-                    subject="Recuperación de Contraseña - La Poblanita",
-                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    "Recuperación de Contraseña - La Poblanita",
+                    sender=app.config['MAIL_USERNAME'],
                     recipients=[email]
                 )
                 msg.body = f"""Para restablecer tu contraseña, visita el siguiente enlace:
@@ -437,15 +427,20 @@ def reset_password(token):
     mensaje = None
     
     try:
-        id_empleado = serializador.loads(token, salt='reinicio-contraseña', max_age=3600)
+        email = serializador.loads(token, salt='reinicio-contraseña', max_age=3600)
     except Exception:
         error = "El enlace es inválido o ha expirado."
         return render_template('auth/reset_password.html', error=error)
     
-    empleado = db_session.query(Empleados).filter_by(id_empleado=id_empleado).first()
-    if not empleado or not empleado.activo:
+    perfil = db_session.query(Perfiles_Empleados).filter(
+        Perfiles_Empleados.email.ilike(email)
+    ).first()
+    
+    if not perfil or not perfil.empleado or not perfil.empleado.activo:
         error = "Usuario no encontrado."
         return render_template('auth/reset_password.html', error=error)
+    
+    empleado = perfil.empleado
     
     if request.method == 'POST':
         nueva_contraseña = request.form['nueva_contraseña']
@@ -453,7 +448,6 @@ def reset_password(token):
         if len(nueva_contraseña) < 6:
             error = "La nueva contraseña debe tener al menos 6 caracteres."
         else:
-            # Actualizar contraseña
             empleado.contraseña_hash = generate_password_hash(nueva_contraseña)
             db_session.commit()
             mensaje = "Contraseña actualizada correctamente."
@@ -1071,5 +1065,4 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=False)
