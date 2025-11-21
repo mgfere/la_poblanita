@@ -376,61 +376,47 @@ def logout():
 def reset_password_request():
     error = None
     mensaje = None
-
+    
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
-
-        print(f"Buscando email: {email}")
-
+        
         empleado = db_session.query(Empleados).join(Perfiles_Empleados).filter(
             Perfiles_Empleados.email.ilike(email),
             Empleados.activo == True
         ).first()
-
+        
         if empleado:
-            print(f"Usuario encontrado: {empleado.nombre_usuario}")
-
             token = serializador.dumps(email, salt='reinicio-contraseña')
-
             url_reinicio = url_for('reset_password', token=token, _external=True)
-            print(f"URL de reinicio: {url_reinicio}")
 
-            try:
-                msg = Message(
-                    "Recuperación de Contraseña - La Poblanita",
-                    sender=app.config['MAIL_USERNAME'],
-                    recipients=[email]
-                )
-                msg.body = f"""Para restablecer tu contraseña, visita el siguiente enlace:
-
-{url_reinicio}
-
-Este enlace expirará en 1 hora.
-
-Si no solicitaste este cambio, puedes ignorar este mensaje."""
-
-                correo.send(msg)
-
-                print(f"Correo enviado exitosamente a: {email}")
-
-                if not app.debug:
-                    mensaje = (
-                        "Se ha enviado un enlace de recuperación a tu correo electrónico.<br>"
-                        f"<br><strong>Enlace de reinicio de contraseña:</strong> "
-                        f"<a href='{url_reinicio}' target='_blank'>{url_reinicio}</a>"
+            # PRODUCCION mostrar link
+            if not app.debug:
+                mensaje = f"""
+                Se encontró el usuario. Da clic en el enlace para restablecer tu contraseña:
+                <br><br>
+                <a href='{url_reinicio}' class='btn btn-success'>Restablecer Contraseña</a>
+                <br><br>
+                Este enlace expira en 1 hora.
+                """
+            else:
+                # LOCAL seguir enviando correo normal
+                try:
+                    msg = Message(
+                        "Recuperación de Contraseña - La Poblanita",
+                        sender=app.config['MAIL_USERNAME'],
+                        recipients=[email]
                     )
-                else:
-                    mensaje = "Se ha enviado un enlace de recuperación a tu correo electrónico"
-
-            except Exception as e:
-                error = "Error al enviar el correo. Por favor, contacta al administrador."
-                print(f"Error enviando correo: {str(e)}")
-
+                    msg.body = f"Enlace de recuperación:\n\n{url_reinicio}"
+                    correo.send(msg)
+                    
+                    mensaje = "Se ha enviado un enlace de recuperación a tu correo."
+                except Exception as e:
+                    error = f"Error enviando correo: {str(e)}"
         else:
-            print(f"Email no encontrado o usuario inactivo: {email}")
-            mensaje = "Si el email existe en nuestro sistema, recibirás un enlace de recuperación"
-
+            mensaje = "Si el correo existe, se enviará el enlace."
+    
     return render_template('auth/reset_password_request.html', error=error, mensaje=mensaje)
+
 
 
 
