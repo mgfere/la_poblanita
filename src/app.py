@@ -371,10 +371,15 @@ def logout():
     return redirect(url_for('login'))
 
 # ===== RUTAS DE RECUPERACIÓN DE CONTRASEÑA =====
+import os
+
 @app.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
     error = None
     mensaje = None
+
+    en_produccion = os.environ.get("RENDER") == "true"
+
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
         
@@ -393,7 +398,18 @@ def reset_password_request():
             url_reinicio = url_for('reset_password', token=token, _external=True)
             
             print(f"URL de reinicio: {url_reinicio}")
-            
+
+            # ==========================
+            #     PRODUCCION (Render)
+            # ==========================
+            if en_produccion:
+                mensaje = f"Enlace de recuperación (úsa este enlace directamente): {url_reinicio}"
+                print("Modo producción: mostrando enlace en pantalla en lugar de enviar correo.")
+                return render_template('auth/reset_password_request.html', error=error, mensaje=mensaje)
+
+            # ==========================
+            #          LOCAL
+            # ==========================
             try:
                 msg = Message(
                     "Recuperación de Contraseña - La Poblanita",
@@ -407,7 +423,7 @@ def reset_password_request():
 Este enlace expirará en 1 hora.
 
 Si no solicitaste este cambio, puedes ignorar este mensaje."""
-                
+
                 correo.send(msg)
                 
                 print(f"Correo enviado exitosamente a: {email}")
@@ -416,11 +432,13 @@ Si no solicitaste este cambio, puedes ignorar este mensaje."""
             except Exception as e:
                 error = "Error al enviar el correo. Por favor, contacta al administrador."
                 print(f"Error enviando correo: {str(e)}")
+        
         else:
             print(f"Email no encontrado o usuario inactivo: {email}")
             mensaje = "Si el email existe en nuestro sistema, recibirás un enlace de recuperación"
     
     return render_template('auth/reset_password_request.html', error=error, mensaje=mensaje)
+
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
