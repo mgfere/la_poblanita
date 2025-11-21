@@ -11,10 +11,14 @@ from flask_mail import Mail, Message
 from config import Config
 import json
 import math
+import os
 
 
 app = Flask(__name__)
 app.secret_key = 'LA POBLANITA'
+
+if 'RENDER' in os.environ:
+    app.config['SERVER_NAME'] = 'la-poblanita.onrender.com'
 
 app.config.from_object(Config)
 
@@ -382,7 +386,6 @@ def reset_password_request():
         
         print(f"Buscando email: {email}")
         
-        # Busca el empleado por email en el perfil
         perfil = db_session.query(Perfiles_Empleados).filter(
             Perfiles_Empleados.email.ilike(email)
         ).first()
@@ -391,9 +394,13 @@ def reset_password_request():
             print(f"Usuario encontrado: {perfil.empleado.nombre_usuario}")
             
             token = serializador.dumps(perfil.empleado.id_empleado, salt='reinicio-contraseña')
-            url_reinicio = url_for('reset_password', token=token, _external=True)
             
-            print(f"Intentando enviar correo a: {email}")
+            # Modifica solo esta parte
+            if 'RENDER' in os.environ:
+                url_reinicio = f"https://la-poblanita.onrender.com/reset_password/{token}"
+            else:
+                url_reinicio = url_for('reset_password', token=token, _external=True)
+            
             print(f"URL de reinicio: {url_reinicio}")
             
             try:
@@ -410,8 +417,7 @@ Este enlace expirará en 1 hora.
 
 Si no solicitaste este cambio, puedes ignorar este mensaje."""
                 
-                with app.app_context():
-                    correo.send(msg)
+                correo.send(msg)
                 
                 print(f"Correo enviado exitosamente a: {email}")
                 mensaje = "Se ha enviado un enlace de recuperación a tu correo electrónico"
@@ -419,8 +425,6 @@ Si no solicitaste este cambio, puedes ignorar este mensaje."""
             except Exception as e:
                 error = "Error al enviar el correo. Por favor, contacta al administrador."
                 print(f"Error enviando correo: {str(e)}")
-                import traceback
-                traceback.print_exc()
         else:
             print(f"Email no encontrado o usuario inactivo: {email}")
             mensaje = "Si el email existe en nuestro sistema, recibirás un enlace de recuperación"
@@ -1067,4 +1071,5 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
